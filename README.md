@@ -235,7 +235,7 @@ namespace App\Nova;
 use BBSLab\NovaPermission\Contracts\HasAbilities;
 use BBSLab\NovaPermission\Traits\Authorizable;
 
-class Post extends Resource implement HasAbilities
+class Post extends Resource implements HasAbilities
 {
     use Authorizable;
 
@@ -282,7 +282,7 @@ class PostPolicy
      * @param  \App\User  $user
      * @return mixed
      */
-    public function update(User $user)
+    public function viewAny(User $user)
     {
         if ($user->hasPermissionTo('viewAny post')) {
             return true;
@@ -308,10 +308,10 @@ class PostPolicy
 Sometimes you may want to protect a particular resource. First the model must implement the `BBSLab\NovaPermission\Contracts\HasAuthorizations`:
 
 ```php
-namespace App\Nova;
+namespace App\Models;
 
 use BBSLab\NovaPermission\Contracts\HasAuthorizations;
-BBSLab\NovaPermission\Traits\Authorizations;
+use BBSLab\NovaPermission\Traits\Authorizations;
 
 class Post extends Model implements HasAuthorizations 
 {
@@ -327,7 +327,12 @@ You need to add the resource in the `config/nova-permission.php`:
 ],
 ```
 
-You can now create a permission attached on a specific post (e.g My Super Secret Post) and update the post policy as follow:
+You can now create a permission attached on a specific post:
+
+![permission on authorizable](docs/permission-on-authorizable.png)
+
+
+And update the post policy:
  
  ```php
     /**
@@ -348,6 +353,8 @@ You can now create a permission attached on a specific post (e.g My Super Secret
 ### Super admin
 
 You may want to create role as super admin. You can do that using the `override_permission` attribute.
+
+![super admin](docs/super-admin-role.png)
 
 You may prevent `override_permission` attribute modification by using the `BBSLab\NovaPermission\Resources\Role::canSeeOverridePermmission` method:
 
