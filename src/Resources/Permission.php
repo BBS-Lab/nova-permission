@@ -86,9 +86,7 @@ class Permission extends Resource
         $fields = [
             ID::make()->sortable(),
             Text::make($this->getTranslatedFieldName('Name'), 'name')
-                ->rules('required', 'string', 'max:255')
-                ->creationRules('unique:'.config('permission.table_names.permissions'))
-                ->updateRules('unique:'.config('permission.table_names.permissions').',name,{{resourceId}}'),
+                ->rules('required', 'string', 'max:255'),
             Text::make($this->getTranslatedFieldName('Group'), 'group')
                 ->rules('nullable', 'string', 'max:255')
                 ->help(trans('nova-permission::resources.permission.group_help')),
