@@ -1,0 +1,36 @@
+{
+    "name": "bbs-lab/nova-permission",
+    "description": "A Laravel Nova permission tool.",
+    "keywords": [
+        "laravel",
+        "nova",
+        "acl",
+        "permission",
+        "role"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": ">=7.1.0",
+        "guzzlehttp/guzzle": "~6.0",
+        "illuminate/notifications": "~5.5 || ~6.0",
+        "illuminate/support": "~5.5 || ~6.0",
+        "spatie/laravel-permission": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BBSLab\\NovaPermission\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "BBSLab\\NovaPermission\\NovaPermissionServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
