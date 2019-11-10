@@ -1,6 +1,12 @@
 {
     "name": "bbs-lab/nova-permission",
     "description": "A Laravel Nova permission tool.",
+    "authors": [
+        {
+            "name": "Mikaël Popowicz",
+            "email": "mikael.popowicz@gmail.com"
+        }
+    ],
     "keywords": [
         "laravel",
         "nova",
