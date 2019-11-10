@@ -227,7 +227,7 @@ public function tools()
 
 ### Generate permissions
 
-The tool allow to generate resource permissions. Your resource must implements `BBSLab\NovaPermission\Contracts\HasAbilities` and define the public static `$permissionsForAbilities` variable:
+The tool allow to generate resource permissions. Your resource must implement `BBSLab\NovaPermission\Contracts\HasAbilities` and define the public static `$permissionsForAbilities` variable:
 
 ```php
 namespace App\Nova;
@@ -255,7 +255,7 @@ This configuration will generate the following permission:
 ]
 ```
 
-You may generate permission from the permission builder tool with the `Generate permission` button or the Artisan command:
+You may generate permission from the permission builder tool with the `Generate permissions` button or the Artisan command:
 
 ```bash
 php artisan nova-permission:generate
@@ -327,7 +327,7 @@ You need to add the resource in the `config/nova-permission.php`:
 ],
 ```
 
-You can now create a permission attached on a specific post:
+You can now create a permission attached on to a specific post:
 
 ![permission on authorizable](docs/permission-on-authorizable.png)
 
