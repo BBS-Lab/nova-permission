@@ -16,6 +16,9 @@ Based on [spatie/permission](https://github.com/spatie/laravel-permission), this
 
 - [Installation](#installation)
 - [Usage](#usage)
+    - [Generate permissions](#generate-permissions)
+    - [Protect resources](#protect-resources)
+    - [Super admin](#super-admin)
 - [Changelog](#changelog)
 - [Security](#security)
 - [Contributing](#contributing)
@@ -222,7 +225,129 @@ public function tools()
 }
 ```
 
-### Prevent role `override_permission` modification
+### Generate permissions
+
+The tool allow to generate resource permissions. Your resource must implements `BBSLab\NovaPermission\Contracts\HasAbilities` and define the public static `$permissionsForAbilities` variable:
+
+```php
+namespace App\Nova;
+
+use BBSLab\NovaPermission\Contracts\HasAbilities;
+use BBSLab\NovaPermission\Traits\Authorizable;
+
+class Post extends Resource implement HasAbilities
+{
+    use Authorizable;
+
+    public static $permissionsForAbilities = [
+        'create' => 'create post',
+    ];
+}
+```
+
+This configuration will generate the following permission:
+
+```php
+[
+    'name' => 'create post',
+    'group' => 'Post',
+    'guard_name' => 'web', // the nova guard or default auth guard
+]
+```
+
+You may generate permission from the permission builder tool with the `Generate permission` button or the Artisan command:
+
+```bash
+php artisan nova-permission:generate
+```
+
+### Protect resources
+
+You can use Laravel policies as usual:
+
+```php
+namespace App\Policies;
+
+use App\User;
+use App\Post;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class PostPolicy
+{
+    use HandlesAuthorization;
+
+    /**
+     * Determine whether the user can view any post.
+     *
+     * @param  \App\User  $user
+     * @return mixed
+     */
+    public function update(User $user)
+    {
+        if ($user->hasPermissionTo('viewAny post')) {
+            return true;
+        }
+    }
+
+    /**
+     * Determine whether the user can update the post.
+     *
+     * @param  \App\User  $user
+     * @param  \App\Post  $post
+     * @return mixed
+     */
+    public function update(User $user, Post $post)
+    {
+        if ($user->hasPermissionTo('update post')) {
+            return true;
+        }
+    }
+}
+```
+
+Sometimes you may want to protect a particular resource. First the model must implement the `BBSLab\NovaPermission\Contracts\HasAuthorizations`:
+
+```php
+namespace App\Nova;
+
+use BBSLab\NovaPermission\Contracts\HasAuthorizations;
+BBSLab\NovaPermission\Traits\Authorizations;
+
+class Post extends Model implements HasAuthorizations 
+{
+    use Authorizations;
+}
+```
+
+You need to add the resource in the `config/nova-permission.php`:
+
+```php
+'authorizable_models' => [
+    \App\Nova\Post::class,
+],
+```
+
+You can now create a permission attached on a specific post (e.g My Super Secret Post) and update the post policy as follow:
+ 
+ ```php
+    /**
+     * Determine whether the user can update the post.
+     *
+     * @param  \App\User  $user
+     * @param  \App\Post  $post
+     * @return mixed
+     */
+    public function update(User $user, Post $post)
+    {
+        if ($user->hasPermissionToOnModel('update post', $post)) {
+            return true;
+        }
+    }
+```
+
+### Super admin
+
+You may want to create role as super admin. You can do that using the `override_permission` attribute.
 
 You may prevent `override_permission` attribute modification by using the `BBSLab\NovaPermission\Resources\Role::canSeeOverridePermmission` method:
 
@@ -233,7 +358,6 @@ BBSLab\NovaPermission\Resources\Role::canSeeOverridePermmission(function (Reques
     // implement your logic
 });
 ``` 
-
 
 ## Changelog
 
