@@ -10,7 +10,7 @@
 
 Based on [spatie/permission](https://github.com/spatie/laravel-permission), this tool gives you ability to manage roles and permission. The tool provides permission builder.
 
-![permission tool screenshot](docs/nova-permission-tool.png)
+![permission tool screenshot](https://bbs-lab.github.io/nova-permission/nova-permission-tool.png)
 
 ## Contents
 
@@ -331,7 +331,7 @@ You need to add the resource in the `config/nova-permission.php`:
 
 You can now create a permission attached on to a specific post:
 
-![permission on authorizable](docs/permission-on-authorizable.png)
+![permission on authorizable](https://bbs-lab.github.io/nova-permission/permission-on-authorizable.png)
 
 
 And update the post policy:
@@ -356,7 +356,7 @@ And update the post policy:
 
 You may want to create role as super admin. You can do that using the `override_permission` attribute.
 
-![super admin](docs/super-admin-role.png)
+![super admin](https://bbs-lab.github.io/nova-permission/super-admin-role.png)
 
 You may prevent `override_permission` attribute modification by using the `BBSLab\NovaPermission\Resources\Role::canSeeOverridePermmission` method:
 
