@@ -43,16 +43,18 @@ The service provider will automatically get registered. Or you may manually add 
 ],
 ```
 
+You should publish the migrations with:
+
+```bash
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider" --tag="migrations"
+
+php artisan vendor:publish --provider="BBSLab\NovaPermission\NovaPermissionServiceProvider" --tag="migrations"
+```
+
 You can publish the config files with:
 
 ```bash
 php artisan vendor:publish --provider="BBSLab\NovaPermission\NovaPermissionServiceProvider" --tag="config"
-```
-
-You should publish the migration with:
-
-```bash
-php artisan vendor:publish --provider="BBSLab\NovaPermission\NovaPermissionServiceProvider" --tag="migrations"
 ```
 
 This will publish `config/permission.php` and `config/nova-permission.php` files with the following contents:
