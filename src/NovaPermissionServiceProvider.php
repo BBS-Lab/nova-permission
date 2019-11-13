@@ -4,8 +4,6 @@ namespace BBSLab\NovaPermission;
 
 use BBSLab\NovaPermission\Contracts\CanOverridePermission;
 use Illuminate\Support\Facades\Gate;
-use Laravel\Nova\Nova;
-use Laravel\Nova\Events\ServingNova;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
@@ -39,11 +37,6 @@ class NovaPermissionServiceProvider extends ServiceProvider
 
         $this->app->booted(function () {
             $this->routes();
-        });
-
-
-        Nova::serving(function (ServingNova $event) {
-
         });
 
         if ($this->app->runningInConsole()) {
