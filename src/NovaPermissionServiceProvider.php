@@ -2,8 +2,8 @@
 
 namespace BBSLab\NovaPermission;
 
-use BBSLab\NovaPermission\Contracts\CanOverridePermission;
 use BBSLab\NovaPermission\Console\Commands\GenerateResourcePermissions;
+use BBSLab\NovaPermission\Contracts\CanOverridePermission;
 use BBSLab\NovaPermission\Http\Middleware\Authorize;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;

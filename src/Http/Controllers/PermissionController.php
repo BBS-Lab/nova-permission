@@ -9,7 +9,6 @@ use BBSLab\NovaPermission\Http\Requests\PermissionByGroupRequest;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Artisan;
 use Laravel\Nova\Nova;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -76,13 +75,11 @@ class PermissionController
             })
             ->get()
             ->map(function ($permission) {
+                /** @var \Laravel\Nova\Resource $resource */
                 $resource = Nova::newResourceFromModel($permission->authorizable);
 
-                if (empty($resource)) {
-                    return null;
-                }
-
                 $permission->group = $resource::singularLabel().': '.$resource->title();
+
                 unset($permission->authorizable);
 
                 return $permission;

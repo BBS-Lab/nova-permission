@@ -34,7 +34,7 @@ abstract class PermissionRequest extends FormRequest
                 'required',
                 'string',
                 Rule::in(array_keys(config('auth.guards'))),
-            ]
+            ],
         ];
     }
 

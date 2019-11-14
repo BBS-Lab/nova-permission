@@ -11,5 +11,4 @@ use Spatie\Permission\Contracts\Role as Contract;
  */
 interface Role extends Contract
 {
-
 }
