@@ -158,7 +158,6 @@ class PermissionController
             ->map
             ->serializeForPermissionBuilder($roles);
 
-
         return response()->json($permissions);
     }
 
