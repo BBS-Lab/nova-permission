@@ -2,8 +2,8 @@
 
 namespace BBSLab\NovaPermission\Console\Commands;
 
-use Illuminate\Console\Command;
 use BBSLab\NovaPermission\Actions\GenerateResourcePermissionsAction;
+use Illuminate\Console\Command;
 
 class GenerateResourcePermissions extends Command
 {

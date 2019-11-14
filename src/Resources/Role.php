@@ -2,6 +2,7 @@
 
 namespace BBSLab\NovaPermission\Resources;
 
+use BBSLab\NovaPermission\Traits\HasFieldName;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Laravel\Nova\Fields\BelongsToMany;
@@ -11,7 +12,6 @@ use Laravel\Nova\Fields\ID;
 use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Resource;
-use BBSLab\NovaPermission\Traits\HasFieldName;
 
 class Role extends Resource
 {

@@ -3,13 +3,13 @@
 namespace BBSLab\NovaPermission;
 
 use BBSLab\NovaPermission\Contracts\CanOverridePermission;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\ServiceProvider;
 use BBSLab\NovaPermission\Console\Commands\GenerateResourcePermissions;
 use BBSLab\NovaPermission\Http\Middleware\Authorize;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
 
 class NovaPermissionServiceProvider extends ServiceProvider
 {
@@ -23,7 +23,7 @@ class NovaPermissionServiceProvider extends ServiceProvider
     {
         $this->publishes([
             __DIR__.'/../config/permission.php' => config_path('permission.php'),
-            __DIR__.'/../config/nova-permission.php' => config_path('nova-permission.php')
+            __DIR__.'/../config/nova-permission.php' => config_path('nova-permission.php'),
         ], 'config');
 
         $this->publishes([

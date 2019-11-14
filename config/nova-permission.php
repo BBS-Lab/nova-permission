@@ -9,5 +9,5 @@ return [
         \Laravel\Nova\Actions\ActionResource::class,
         \BBSLab\NovaPermission\Resources\Role::class,
         \BBSLab\NovaPermission\Resources\Permission::class,
-    ]
+    ],
 ];

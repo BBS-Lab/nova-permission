@@ -2,6 +2,7 @@
 
 namespace BBSLab\NovaPermission\Resources;
 
+use BBSLab\NovaPermission\Traits\HasFieldName;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Laravel\Nova\Fields\BelongsToMany;
@@ -11,7 +12,6 @@ use Laravel\Nova\Fields\MorphTo;
 use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Resource;
-use BBSLab\NovaPermission\Traits\HasFieldName;
 
 class Permission extends Resource
 {
@@ -97,7 +97,7 @@ class Permission extends Resource
 
         $models = config('nova-permission.authorizable_models', []);
 
-        if (!empty($models)) {
+        if (! empty($models)) {
             $fields[] = MorphTo::make($this->getTranslatedFieldName('Authorizable model'), 'authorizable')
                 ->types($models)
                 ->searchable()
@@ -111,7 +111,7 @@ class Permission extends Resource
                 ->onlyOnDetail(),
             BelongsToMany::make(Role::label(), 'roles', Role::class)
                 ->searchable()
-                ->singularLabel(Role::singularLabel())
+                ->singularLabel(Role::singularLabel()),
         ]);
     }
 }

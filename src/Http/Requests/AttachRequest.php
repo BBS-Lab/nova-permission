@@ -6,11 +6,10 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Class AttachRequest
+ * Class AttachRequest.
  *
- * @package BBSLab\NovaPermission\Http\Requests
  * @property array $permissions
- * @property boolean $attach
+ * @property bool $attach
  */
 class AttachRequest extends FormRequest
 {

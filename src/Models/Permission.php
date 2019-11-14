@@ -2,21 +2,20 @@
 
 namespace BBSLab\NovaPermission\Models;
 
+use BBSLab\NovaPermission\Contracts\Permission as PermissionContract;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
-use BBSLab\NovaPermission\Contracts\Permission as PermissionContract;
 use Spatie\Permission\Models\Permission as Model;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * Class Permission
+ * Class Permission.
  *
- * @package BBSLab\NovaPermission\Models
- * @property integer $id
+ * @property int $id
  * @property string $name
  * @property string $guard_name
  * @property string $group
- * @property integer $authorizable_id
+ * @property int $authorizable_id
  * @property string $authorizable_type
  * @property \Illuminate\Database\Eloquent\Collection $roles
  * @property \Carbon\Carbon $created_at

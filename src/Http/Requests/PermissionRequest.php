@@ -6,9 +6,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Class PermissionRequest
+ * Class PermissionRequest.
  *
- * @package BBSLab\NovaPermission\Http\Requests
  * @property string $guard
  */
 abstract class PermissionRequest extends FormRequest
@@ -34,7 +33,7 @@ abstract class PermissionRequest extends FormRequest
             'guard' => [
                 'required',
                 'string',
-                Rule::in(array_keys(config('auth.guards')))
+                Rule::in(array_keys(config('auth.guards'))),
             ]
         ];
     }

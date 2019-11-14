@@ -2,16 +2,15 @@
 
 namespace BBSLab\NovaPermission\Http\Controllers;
 
+use BBSLab\NovaPermission\Actions\GenerateResourcePermissionsAction;
+use BBSLab\NovaPermission\Http\Requests\AttachRequest;
+use BBSLab\NovaPermission\Http\Requests\PermissionByAuthorizableRequest;
+use BBSLab\NovaPermission\Http\Requests\PermissionByGroupRequest;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Laravel\Nova\Nova;
-use BBSLab\NovaPermission\Actions\GenerateResourcePermissionsAction;
-use BBSLab\NovaPermission\Console\Commands\GenerateResourcePermissions;
-use BBSLab\NovaPermission\Http\Requests\AttachRequest;
-use BBSLab\NovaPermission\Http\Requests\PermissionByAuthorizableRequest;
-use BBSLab\NovaPermission\Http\Requests\PermissionByGroupRequest;
 use Spatie\Permission\PermissionRegistrar;
 
 class PermissionController
@@ -58,7 +57,7 @@ class PermissionController
             ->select('group', 'authorizable_id', 'authorizable_type', 'guard_name')
             ->distinct()
             ->whereNull(['authorizable_id', 'authorizable_id'])
-            ->when(!empty($search), function ($query) use ($search) {
+            ->when(! empty($search), function ($query) use ($search) {
                 return $query->where(function ($query) use ($search) {
                     $query->where('group', 'like', "%$search%")
                         ->orWhere('name', 'like', "%$search%");
@@ -72,7 +71,7 @@ class PermissionController
             ->distinct()
             ->with('authorizable')
             ->whereNotNull(['authorizable_id', 'authorizable_id'])
-            ->when(!empty($search), function ($query) use ($search) {
+            ->when(! empty($search), function ($query) use ($search) {
                 return $query->where('name', 'like', "%$search%");
             })
             ->get()
@@ -112,7 +111,7 @@ class PermissionController
             ->select('id', 'name', 'guard_name')
             ->with('roles')
             ->where('guard_name', '=', $guard)
-            ->when(!empty($search), function (EloquentBuilder $query) use ($search) {
+            ->when(! empty($search), function (EloquentBuilder $query) use ($search) {
                 return $query->where('name', 'like', "%$search%");
             })
             ->orderBy('name');
@@ -132,7 +131,7 @@ class PermissionController
             ->when(empty($request->group), function (EloquentBuilder $query) {
                 return $query->whereNull(['group', 'authorizable_id', 'authorizable_type']);
             })
-            ->when(!empty($request->group), function (EloquentBuilder $query) use ($request) {
+            ->when(! empty($request->group), function (EloquentBuilder $query) use ($request) {
                 return $query->where('group', '=', $request->group)
                     ->whereNull(['authorizable_id', 'authorizable_type']);
             })

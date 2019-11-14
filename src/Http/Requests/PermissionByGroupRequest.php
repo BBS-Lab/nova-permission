@@ -5,9 +5,8 @@ namespace BBSLab\NovaPermission\Http\Requests;
 use Illuminate\Validation\Rule;
 
 /**
- * Class PermissionByGroupRequest
+ * Class PermissionByGroupRequest.
  *
- * @package BBSLab\NovaPermission\Http\Requests
  * @property string|null $group
  */
 class PermissionByGroupRequest extends PermissionRequest

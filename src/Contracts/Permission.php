@@ -7,9 +7,8 @@ use Illuminate\Support\Collection;
 use Spatie\Permission\Contracts\Permission as Contract;
 
 /**
- * Interface Permission
+ * Interface Permission.
  *
- * @package BBSLab\NovaPermission\Contracts
  * @mixin \Illuminate\Database\Eloquent\Model
  */
 interface Permission extends Contract

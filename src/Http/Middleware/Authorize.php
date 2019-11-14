@@ -2,8 +2,8 @@
 
 namespace BBSLab\NovaPermission\Http\Middleware;
 
-use Laravel\Nova\Nova;
 use BBSLab\NovaPermission\PermissionBuilder;
+use Laravel\Nova\Nova;
 
 class Authorize
 {

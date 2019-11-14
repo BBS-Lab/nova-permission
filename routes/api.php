@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use BBSLab\NovaPermission\Http\Controllers\PermissionController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,7 +17,7 @@ use BBSLab\NovaPermission\Http\Controllers\PermissionController;
 Route::get('/groups', [PermissionController::class, 'groups']);
 
 Route::group([
-    'prefix' => 'permissions'
+    'prefix' => 'permissions',
 ], function () {
     Route::post('/group', [PermissionController::class, 'permissionsByGroup']);
     Route::post('/authorizable', [PermissionController::class, 'permissionsByAuthorizable']);

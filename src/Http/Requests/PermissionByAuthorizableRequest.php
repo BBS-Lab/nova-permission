@@ -3,10 +3,9 @@
 namespace BBSLab\NovaPermission\Http\Requests;
 
 /**
- * Class PermissionByAuthorizableRequest
+ * Class PermissionByAuthorizableRequest.
  *
- * @package BBSLab\NovaPermission\Http\Requests
- * @property integer $id
+ * @property int $id
  * @property string $type
  */
 class PermissionByAuthorizableRequest extends PermissionRequest
@@ -24,7 +23,7 @@ class PermissionByAuthorizableRequest extends PermissionRequest
                 'required',
                 'string',
                 function ($attribute, $value, $fail) {
-                    if (!class_exists($value)) {
+                    if (! class_exists($value)) {
                         $fail($attribute.'is invalid');
                     }
                 },

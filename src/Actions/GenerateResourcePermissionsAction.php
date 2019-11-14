@@ -2,8 +2,8 @@
 
 namespace BBSLab\NovaPermission\Actions;
 
-use Laravel\Nova\Nova;
 use BBSLab\NovaPermission\Contracts\HasAbilities;
+use Laravel\Nova\Nova;
 use Spatie\Permission\PermissionRegistrar;
 
 class GenerateResourcePermissionsAction
