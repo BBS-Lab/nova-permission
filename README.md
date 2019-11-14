@@ -2,10 +2,8 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/bbs-lab/nova-permission.svg?style=flat-square)](https://packagist.org/packages/bbs-lab/nova-permission)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Build Status](https://img.shields.io/travis/bbs-lab/nova-permission/master.svg?style=flat-square)](https://travis-ci.org/bbs-lab/nova-permission)
-[![StyleCI](https://styleci.io/repos/217854455/shield)](https://styleci.io/repos/217854455)
+[![StyleCI](https://styleci.io/repos/220784911/shield)](https://styleci.io/repos/220784911)
 [![Quality Score](https://img.shields.io/scrutinizer/g/bbs-lab/nova-permission.svg?style=flat-square)](https://scrutinizer-ci.com/g/bbs-lab/nova-permission)
-[![Code Coverage](https://img.shields.io/scrutinizer/coverage/g/bbs-lab/nova-permission/master.svg?style=flat-square)](https://scrutinizer-ci.com/g/bbs-lab/nova-permission/?branch=master)
 [![Total Downloads](https://img.shields.io/packagist/dt/bbs-lab/nova-permission.svg?style=flat-square)](https://packagist.org/packages/bbs-lab/nova-permission)
 
 Based on [spatie/permission](https://github.com/spatie/laravel-permission), this tool gives you ability to manage roles and permission. The tool provides permission builder.
