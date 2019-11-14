@@ -61,6 +61,7 @@ class NovaPermissionServiceProvider extends ServiceProvider
             'add_override_permission_to_roles_table.php',
         ])->mapWithKeys(function ($file) use ($filesystem) {
             $key = __DIR__."/../database/migrations/{$file}.stub";
+
             return [$key => $this->getMigrationFileName($filesystem, $file)];
         })->toArray();
 
@@ -104,6 +105,7 @@ class NovaPermissionServiceProvider extends ServiceProvider
     protected function getMigrationFileName(Filesystem $filesystem, string $file): string
     {
         $timestamp = date('Y_m_d_His');
+
         return Collection::make($this->app->databasePath().DIRECTORY_SEPARATOR.'migrations'.DIRECTORY_SEPARATOR)
             ->flatMap(function ($path) use ($filesystem, $file) {
                 return $filesystem->glob("{$path}*_{$file}");
