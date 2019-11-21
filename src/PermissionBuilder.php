@@ -4,7 +4,6 @@ namespace BBSLab\NovaPermission;
 
 use Laravel\Nova\Nova;
 use Laravel\Nova\Tool;
-use Spatie\Permission\PermissionRegistrar;
 
 class PermissionBuilder extends Tool
 {

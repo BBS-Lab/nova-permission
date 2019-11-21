@@ -11,5 +11,5 @@ return [
     'No permission or group match the given criteria' =>  'No permission or group match the given criteria',
     'No role selected' =>  'No role selected',
     'Permission builder' =>  'Permission builder',
-    'Permissions' =>  'Permissions'
+    'Permissions' =>  'Permissions',
 ];
