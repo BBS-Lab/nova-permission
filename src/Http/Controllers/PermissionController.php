@@ -9,6 +9,7 @@ use BBSLab\NovaPermission\Http\Requests\PermissionByGroupRequest;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Laravel\Nova\Nova;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -63,7 +64,19 @@ class PermissionController
                 });
             })
             ->orderBy('group')
-            ->get();
+            ->get()
+            ->map(function ($permission) use ($request) {
+                if (! empty($permission->group)) {
+                    $key = Str::plural(Str::kebab($permission->group));
+                    $resource = Nova::resourceForKey($key);
+
+                    if (! empty($resource)) {
+                        $permission->display = $resource::label();
+                    }
+                }
+
+                return $permission;
+            });
 
         $models = $this->permissionModel->newQuery()
             ->select('authorizable_id', 'authorizable_type', 'guard_name')
@@ -78,7 +91,7 @@ class PermissionController
                 /** @var \Laravel\Nova\Resource $resource */
                 $resource = Nova::newResourceFromModel($permission->authorizable);
 
-                $permission->group = $resource::singularLabel().': '.$resource->title();
+                $permission->display = $resource::singularLabel().': '.$resource->title();
 
                 unset($permission->authorizable);
 

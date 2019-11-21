@@ -1,7 +1,7 @@
 <template>
   <card>
     <heading :level="2" class="border-b border-40 py-4 px-4 flex ">
-      <span class="inline-block font-semibold">{{ trans(group.group || 'Not grouped') }}</span>
+      <span class="inline-block font-semibold">{{ trans(group.display || 'Not grouped') }}</span>
       <span class="inline-block bg-primary text-white rounded-full px-2 py-1 text-sm font-semibold ml-3">{{ group.guard_name}}</span>
     </heading>
 

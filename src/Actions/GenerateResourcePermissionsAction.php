@@ -30,6 +30,8 @@ class GenerateResourcePermissionsAction
                 ]);
             }
         });
+
+        $permissionModel->forgetCachedPermissions();
     }
 
     protected function resourceIsNotExcluded(string $resource): bool
