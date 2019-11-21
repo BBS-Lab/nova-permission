@@ -42,18 +42,12 @@ class PermissionController
     }
 
     /**
-     * Get the permission groups.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  string $search
+     * @return \Illuminate\Support\Collection
      */
-    public function groups(Request $request)
+    protected function getSimpleGroups($search): Collection
     {
-        $search = trim($request->query('search'));
-
-        $roles = $this->getRoles();
-
-        $groups = $this->permissionModel->newQuery()
+        return $this->permissionModel->newQuery()
             ->select('group', 'authorizable_id', 'authorizable_type', 'guard_name')
             ->distinct()
             ->whereNull(['authorizable_id', 'authorizable_id'])
@@ -65,7 +59,7 @@ class PermissionController
             })
             ->orderBy('group')
             ->get()
-            ->map(function ($permission) use ($request) {
+            ->map(function ($permission) {
                 if (! empty($permission->group)) {
                     $key = Str::plural(Str::kebab($permission->group));
                     $resource = Nova::resourceForKey($key);
@@ -77,8 +71,15 @@ class PermissionController
 
                 return $permission;
             });
+    }
 
-        $models = $this->permissionModel->newQuery()
+    /**
+     * @param  string $search
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getModelGroups($search): Collection
+    {
+        return $this->permissionModel->newQuery()
             ->select('authorizable_id', 'authorizable_type', 'guard_name')
             ->distinct()
             ->with('authorizable')
@@ -98,15 +99,25 @@ class PermissionController
                 return $permission;
             })
             ->filter();
+    }
 
-        $groups = $groups->concat($models)
-            ->sortBy('group')
-            ->values()
-            ->all();
+    /**
+     * Get the permission groups.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function groups(Request $request)
+    {
+        $search = trim($request->query('search'));
 
         return response()->json([
-            'roles' => $roles,
-            'groups' => $groups,
+            'roles' => $this->getRoles(),
+            'groups' => $this->getSimpleGroups($search)
+                ->concat($this->getModelGroups($search))
+                ->sortBy('group')
+                ->values()
+                ->all(),
         ]);
     }
 
