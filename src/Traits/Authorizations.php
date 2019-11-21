@@ -2,7 +2,6 @@
 
 namespace BBSLab\NovaPermission\Traits;
 
-use Avec\Models\Chamber as ChamberModel;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -66,7 +65,7 @@ trait Authorizations
                         $query->select(DB::raw(1))
                             ->from($modelHasRolesTable)
                             ->join($rolesTable, "{$rolesTable}.id", '=', "{$modelHasRolesTable}.role_id")
-                            ->where("{$rolesTable}.override_permission", "=", true)
+                            ->where("{$rolesTable}.override_permission", '=', true)
                             ->where("{$modelHasRolesTable}.model_type", '=', get_class($user))
                             ->where("{$modelHasRolesTable}.model_id", '=', $user->getkey());
                     });

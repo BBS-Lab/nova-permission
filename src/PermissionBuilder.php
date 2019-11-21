@@ -2,8 +2,6 @@
 
 namespace BBSLab\NovaPermission;
 
-use BBSLab\NovaPermission\Resources\Permission;
-use BBSLab\NovaPermission\Resources\Role;
 use Laravel\Nova\Nova;
 use Laravel\Nova\Tool;
 use Spatie\Permission\PermissionRegistrar;
@@ -20,19 +18,7 @@ class PermissionBuilder extends Tool
         Nova::script('nova-permission', __DIR__.'/../dist/js/tool.js');
         Nova::style('nova-permission', __DIR__.'/../dist/css/tool.css');
 
-        $this->registerResources(app(PermissionRegistrar::class));
         $this->loadNovaTranslations();
-    }
-
-    protected function registerResources(PermissionRegistrar $registrar)
-    {
-        Permission::$model = get_class($registrar->getPermissionClass());
-        Role::$model = get_class($registrar->getRoleClass());
-
-        Nova::resources([
-            Permission::class,
-            Role::class,
-        ]);
     }
 
     protected function loadNovaTranslations()

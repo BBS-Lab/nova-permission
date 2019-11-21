@@ -30,11 +30,11 @@ class Permission extends Model implements PermissionContract
     {
         parent::boot();
 
-        static::saving(function (Permission $permission) {
+        static::saving(function (self $permission) {
             $permission->forgetPermissionFromCache();
         });
 
-        static::deleting(function (Permission $permission) {
+        static::deleting(function (self $permission) {
             $permission->forgetPermissionFromCache();
         });
     }
@@ -87,7 +87,7 @@ class Permission extends Model implements PermissionContract
                 'authorization',
                 $this->getOriginal('authorizable_type', $this->authorizable_type),
                 $this->getOriginal('authorizable_id', $this->authorizable_id),
-                Str::snake($this->getOriginal('name', $this->name))
+                Str::snake($this->getOriginal('name', $this->name)),
             ]);
 
             Cache::forget($key);

@@ -5,11 +5,15 @@ namespace BBSLab\NovaPermission;
 use BBSLab\NovaPermission\Console\Commands\GenerateResourcePermissions;
 use BBSLab\NovaPermission\Contracts\CanOverridePermission;
 use BBSLab\NovaPermission\Http\Middleware\Authorize;
+use BBSLab\NovaPermission\Resources\Permission;
+use BBSLab\NovaPermission\Resources\Role;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Nova\Nova;
+use Spatie\Permission\PermissionRegistrar;
 
 class NovaPermissionServiceProvider extends ServiceProvider
 {
@@ -52,6 +56,19 @@ class NovaPermissionServiceProvider extends ServiceProvider
 
             return false;
         });
+
+        $this->registerResources(app(PermissionRegistrar::class));
+    }
+
+    protected function registerResources(PermissionRegistrar $registrar)
+    {
+        Permission::$model = get_class($registrar->getPermissionClass());
+        Role::$model = get_class($registrar->getRoleClass());
+
+        Nova::resources([
+            Permission::class,
+            Role::class,
+        ]);
     }
 
     protected function publishMigrations(Filesystem $filesystem): void

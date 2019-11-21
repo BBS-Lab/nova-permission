@@ -65,7 +65,7 @@ trait HasRoles
             'authorization',
             class_basename($model),
             $model->getKey(),
-            Str::snake($permission)
+            Str::snake($permission),
         ]);
 
         /** @var \Illuminate\Contracts\Cache\Factory $cacheManager */
