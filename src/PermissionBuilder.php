@@ -37,23 +37,15 @@ class PermissionBuilder extends Tool
 
     protected function loadNovaTranslations()
     {
-        $locale = is_readable(__DIR__.'/../resources/lang/'.app()->getLocale().'.json')
-            ? app()->getLocale()
-            : 'en';
-
-        $file = __DIR__.'/../resources/lang/'.$locale.'.json';
-
-        if (! is_readable($file)) {
-            return;
-        }
-
-        $translations = json_decode(file_get_contents($file), true);
-
-        $translations = collect($translations)->mapWithKeys(function ($value, $key) {
+        $translations = collect(trans('nova-permission::permission-builder'))->mapWithKeys(function ($value, $key) {
             return ["permission-builder::{$key}" => $value];
         })->toArray();
 
         Nova::translations($translations);
+
+        Nova::provideToScript([
+            'translations' => Nova::allTranslations(),
+        ]);
     }
 
     /**

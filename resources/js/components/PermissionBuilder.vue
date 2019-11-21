@@ -55,7 +55,7 @@
       </card>
 
       <permission-group
-        v-for="(group, index) in groups"
+        v-for="(group, index) in availableGroups"
         :key="index"
         :class="{'mb-8': index < groups.length - 1}"
         :group="group"
@@ -108,6 +108,10 @@ export default {
   },
 
   computed: {
+    availableGroups() {
+      return _.sortBy(this.groups, (g) => g.display)
+    },
+
     availableRoles() {
       return this.roles.filter(role => this.checked[role.id])
     },

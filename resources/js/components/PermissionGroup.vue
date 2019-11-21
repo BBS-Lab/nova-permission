@@ -39,7 +39,7 @@
       </thead>
       <tbody class="w-full">
       <tr v-for="permission in permissions" :key="permission.id" class="w-full">
-        <td class="w-1/6">{{ permission.name }}</td>
+        <td class="w-1/6">{{ trans(permission.name) }}</td>
         <td v-for="role in roles" class="text-center" :key="role.id">
           <checkbox
             v-if="!loaders[permission.id][role.id]"
