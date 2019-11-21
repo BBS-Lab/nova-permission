@@ -25,6 +25,14 @@ trait HasRoles
         ]);
     }
 
+    public function forgetOverridePermission(): void
+    {
+        /** @var \Illuminate\Contracts\Cache\Factory $cacheManager */
+        $cacheManager = app('cache');
+
+        $cacheManager->flush($this->getOverridePermissionCacheKey());
+    }
+
     public function canOverridePermission(): bool
     {
         /** @var \Illuminate\Contracts\Cache\Factory $cacheManager */
