@@ -75,7 +75,7 @@ trait HasRoles
             ->remember($key, PermissionRegistrar::$cacheExpirationTime, function () use ($permission, $model, $guardName) {
                 return $model->authorizations()
                     ->where('name', '=', $permission)
-                    ->where('guand_name', '=', $guardName ?? $this->getDefaultGuardName())
+                    ->where('guard_name', '=', $guardName ?? $this->getDefaultGuardName())
                     ->first();
             });
 
