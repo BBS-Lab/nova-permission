@@ -10,4 +10,6 @@ return [
         \BBSLab\NovaPermission\Resources\Role::class,
         \BBSLab\NovaPermission\Resources\Permission::class,
     ],
+
+    'gate_cache' => env('NOVA_PERMISSION_GATE_CACHE', 60 * 60),
 ];
