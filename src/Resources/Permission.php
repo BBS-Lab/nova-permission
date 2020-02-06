@@ -2,6 +2,8 @@
 
 namespace BBSLab\NovaPermission\Resources;
 
+use BBSLab\NovaPermission\Contracts\HasAbilities;
+use BBSLab\NovaPermission\Traits\Authorizable;
 use BBSLab\NovaPermission\Traits\HasFieldName;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,9 +15,18 @@ use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Resource;
 
-class Permission extends Resource
+class Permission extends Resource implements HasAbilities
 {
-    use HasFieldName;
+    use Authorizable,
+        HasFieldName;
+
+    public static $permissionsForAbilities = [
+        'viewAny' => 'viewAny permission',
+        'view' => 'view permission',
+        'create' => 'create permission',
+        'update' => 'update permission',
+        'delete' => 'delete permission',
+    ];
 
     /**
      * The model the resource corresponds to.

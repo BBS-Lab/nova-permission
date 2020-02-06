@@ -2,6 +2,8 @@
 
 namespace BBSLab\NovaPermission\Resources;
 
+use BBSLab\NovaPermission\Contracts\HasAbilities;
+use BBSLab\NovaPermission\Traits\Authorizable;
 use BBSLab\NovaPermission\Traits\HasFieldName;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,9 +15,18 @@ use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Resource;
 
-class Role extends Resource
+class Role extends Resource implements HasAbilities
 {
-    use HasFieldName;
+    use Authorizable,
+        HasFieldName;
+
+    public static $permissionsForAbilities = [
+        'viewAny' => 'viewAny role',
+        'view' => 'view role',
+        'create' => 'create role',
+        'update' => 'update role',
+        'delete' => 'delete role',
+    ];
 
     public static $canSeeOverridePermissionCallback = null;
 
