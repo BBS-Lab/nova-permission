@@ -7,6 +7,7 @@ use BBSLab\NovaPermission\Contracts\CanOverridePermission;
 use BBSLab\NovaPermission\Http\Middleware\Authorize;
 use BBSLab\NovaPermission\Resources\Permission;
 use BBSLab\NovaPermission\Resources\Role;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -62,8 +63,10 @@ class NovaPermissionServiceProvider extends ServiceProvider
 
     protected function registerResources(PermissionRegistrar $registrar)
     {
+        Model::unguard(true);
         Permission::$model = get_class($registrar->getPermissionClass());
         Role::$model = get_class($registrar->getRoleClass());
+        Model::unguard(false);
 
         Nova::resources([
             Permission::class,
