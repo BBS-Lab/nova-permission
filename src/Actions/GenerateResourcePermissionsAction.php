@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission\Actions;
 
 use BBSLab\NovaPermission\Contracts\HasAbilities;
 use Laravel\Nova\Nova;
+use phpDocumentor\Reflection\Types\ClassString;
 use Spatie\Permission\PermissionRegistrar;
 
 class GenerateResourcePermissionsAction
@@ -11,8 +14,6 @@ class GenerateResourcePermissionsAction
     public function execute()
     {
         $guard = config('nova.guard') ?? config('auth.defaults.guard');
-
-        Nova::resourcesIn(app_path('Nova'));
 
         /** @var \BBSLab\NovaPermission\Contracts\Permission $permissionModel */
         $permissionModel = app(PermissionRegistrar::class)->getPermissionClass();
@@ -23,7 +24,7 @@ class GenerateResourcePermissionsAction
             $group = class_basename($resource);
 
             foreach ($resource::$permissionsForAbilities as $ability => $permission) {
-                $permissionModel->newQuery()->firstOrCreate([
+                $permissionModel::query()->firstOrCreate([
                     'name' => $permission,
                     'group' => $group,
                     'guard_name' => $guard,
@@ -31,14 +32,18 @@ class GenerateResourcePermissionsAction
             }
         });
 
-        $permissionModel->forgetCachedPermissions();
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     protected function resourceIsNotExcluded(string $resource): bool
     {
-        return ! in_array($resource, config('nova-permission.generate_without_resources', []));
+        return !in_array($resource, config('nova-permission.generate_without_resources', []));
     }
 
+    /**
+     * @param class-string<\Laravel\Nova\Resource> $resource
+     * @return bool
+     */
     protected function resourceHasAbilities(string $resource): bool
     {
         $resource = Nova::resourceInstanceForKey($resource::uriKey());

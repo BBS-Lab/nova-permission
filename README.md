@@ -8,7 +8,7 @@
 
 Based on [spatie/permission](https://github.com/spatie/laravel-permission), this tool gives you ability to manage roles and permission. The tool provides permission builder.
 
-![permission tool screenshot](https://bbs-lab.github.io/nova-permission/nova-permission-tool.png)
+![permission tool screenshot](docs/nova-permission-tool.png)
 
 ## Contents
 
@@ -25,7 +25,7 @@ Based on [spatie/permission](https://github.com/spatie/laravel-permission), this
 
 ## Installation
 
-You can install the nova tool in to a Laravel app that uses [Nova](https://nova.laravel.com) via composer:
+To get started, you will need to install the following dependencies
 
 
 ``` bash
@@ -203,7 +203,7 @@ return [
 ];
 ```
 
-After the migration has been published you can create the role- and permission-tables by running the migrations:
+After the migration has been published you can create the role and permission tables by running the migrations :
 
 ```bash
 php artisan migrate
@@ -215,31 +215,46 @@ You must register the tool with Nova. This is typically done in the `tools` meth
 
 ```php
 // app/Providers/NovaServiceProvider.php
+<?php
 
-public function tools()
+use BBSLab\NovaPermission\PermissionBuilder;
+use Laravel\Nova\NovaApplicationServiceProvider;
+
+class NovaServiceProvider extends NovaApplicationServiceProvider
 {
-    return [
-        // ...
-        new BBSLab\NovaPermission\PermissionBuilder(),
-    ];
+    // ..
+    
+    public function tools()
+    {
+        return [
+            // ...
+            PermissionBuilder::make(),
+            // You may add some access control
+            PermissionBuilder::make()->canSee(function ($request) {
+                return $request->user()->hasRole('admin');            
+            }),
+        ];
+    }
 }
 ```
 
 ### Generate permissions
 
-The tool allow to generate resource permissions. Your resource must implement `BBSLab\NovaPermission\Contracts\HasAbilities` and define the public static `$permissionsForAbilities` variable:
+The tool allow to generate resource permissions. Your resources must implement `BBSLab\NovaPermission\Contracts\HasAbilities` and define the public static `$permissionsForAbilities` variable :
+
 
 ```php
 namespace App\Nova;
 
 use BBSLab\NovaPermission\Contracts\HasAbilities;
-use BBSLab\NovaPermission\Traits\Authorizable;
+use BBSLab\NovaPermission\Concerns\Authorizable;
 
 class Post extends Resource implements HasAbilities
 {
     use Authorizable;
 
     public static $permissionsForAbilities = [
+//        'policy action' => 'display name'
         'create' => 'create post',
     ];
 }
@@ -250,7 +265,7 @@ This configuration will generate the following permission:
 ```php
 [
     'name' => 'create post',
-    'group' => 'Post',
+    'group' => 'Post', // class basename of the model
     'guard_name' => 'web', // the nova guard or default auth guard
 ]
 ```
@@ -263,49 +278,41 @@ php artisan nova-permission:generate
 
 ### Protect resources
 
-You can use Laravel policies as usual:
+You may use authorization policies and extend the provided `BBSLab\NovaPermission\Policies\Policy` class
 
 ```php
 namespace App\Policies;
 
-use App\User;
-use App\Post;
-use Illuminate\Auth\Access\HandlesAuthorization;
+use App\Models\Post;
+use BBSLab\NovaPermission\Policies\Policy;
+use Illuminate\Contracts\Auth\Access\Authorizable;
 
-class PostPolicy
+class PostPolicy extends Policy
 {
-    use HandlesAuthorization;
-
-    /**
-     * Determine whether the user can view any post.
-     *
-     * @param  \App\User  $user
-     * @return mixed
-     */
-    public function viewAny(User $user)
+    protected function model(): string
     {
-        if ($user->hasPermissionTo('viewAny post')) {
-            return true;
-        }
-    }
-
-    /**
-     * Determine whether the user can update the post.
-     *
-     * @param  \App\User  $user
-     * @param  \App\Post  $post
-     * @return mixed
-     */
-    public function update(User $user, Post $post)
-    {
-        if ($user->hasPermissionTo('update post')) {
-            return true;
-        }
+        return Post::class;
     }
 }
 ```
 
-Sometimes you may want to protect a particular resource. First the model must implement the `BBSLab\NovaPermission\Contracts\HasAuthorizations`:
+> [!IMPORTANT]  
+> You must create a policy for each model you want to protect else the [default permissions](https://nova.laravel.com/docs/resources/authorization.html#undefined-policy-methods) will be applied!
+
+The base `Policy` class takes care of the following actions for you :
+
+- viewAny
+- view
+- create
+- update
+- replicate
+- delete
+- restore
+- forceDelete
+
+You are free to add or update methods.
+
+Sometimes you may want to protect a particular resource. First the model must implement the `BBSLab\NovaPermission\Contracts\HasAuthorizations` interface and use the `BBSLab\NovaPermission\Traits\Authorizations` trait :
 
 ```php
 namespace App\Models;
@@ -327,34 +334,44 @@ You need to add the resource in the `config/nova-permission.php`:
 ],
 ```
 
-You can now create a permission attached on to a specific post:
+You can now create a permission for a specific post:
 
-![permission on authorizable](https://bbs-lab.github.io/nova-permission/permission-on-authorizable.png)
+![permission on authorizable](docs/permission-on-authorizable.png)
 
+> [!TIP]
+> If you want to have custom permissions for each model you create you can create an [observer](https://laravel.com/docs/11.x/eloquent#observers) to create the permission automatically.
 
 And update the post policy:
- 
+
  ```php
-    /**
-     * Determine whether the user can update the post.
-     *
-     * @param  \App\User  $user
-     * @param  \App\Post  $post
-     * @return mixed
-     */
-    public function update(User $user, Post $post)
+namespace App\Policies;
+
+use App\Models\Post;use BBSLab\NovaPermission\Policies\Policy;use Illuminate\Contracts\Auth\Access\Authorizable;
+
+class PostPolicy extends Policy
+{
+    protected function model(): string
     {
-        if ($user->hasPermissionToOnModel('update post', $post)) {
+        return Post::class;
+    }
+    
+    public function view(Authorizable $user, Post $post)
+    {
+        if ($user->hasPermissionToOnModel('view secret post', $post)) {
             return true;
         }
     }
+}
 ```
+
+> [!TIP]
+> If you create a custom permission for a model which is named like a [Nova action](https://nova.laravel.com/docs/resources/authorization.html#policies) (e.g. `view`) you don't need to update your policy.
 
 ### Super admin
 
-You may want to create role as super admin. You can do that using the `override_permission` attribute.
+You may want to create a role as super admin. You can do that using the `override_permission` attribute.
 
-![super admin](https://bbs-lab.github.io/nova-permission/super-admin-role.png)
+![super admin](docs/super-admin-role.png)
 
 You may prevent `override_permission` attribute modification by using the `BBSLab\NovaPermission\Resources\Role::canSeeOverridePermmission` method:
 

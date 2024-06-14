@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission\Models;
 
 use BBSLab\NovaPermission\Contracts\Permission as PermissionContract;
@@ -39,23 +41,12 @@ class Permission extends Model implements PermissionContract
         });
     }
 
-    /**
-     * Get the authorizable instance.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
-     */
     public function authorizable(): MorphTo
     {
         return $this->morphTo();
     }
 
-    /**
-     * Get permission builder representation.
-     *
-     * @param  \Illuminate\Support\Collection  $roles
-     * @return array
-     */
-    public function serializeForPermissionBuilder(Collection $roles = null): array
+    public function serializeForPermissionBuilder(?Collection $roles = null): array
     {
         if (empty($roles)) {
             $roles = app(PermissionRegistrar::class)->getRoleClass()

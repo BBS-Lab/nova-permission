@@ -1,22 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission\Http\Requests;
 
 use Illuminate\Validation\Rule;
 
 /**
- * Class PermissionByGroupRequest.
- *
  * @property string|null $group
  */
 class PermissionByGroupRequest extends PermissionRequest
 {
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array
-     */
-    public function rules()
+    public function rules(): array
     {
         return array_merge(parent::rules(), [
             'group' => [

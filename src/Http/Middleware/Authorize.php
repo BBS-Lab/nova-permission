@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission\Http\Middleware;
 
 use BBSLab\NovaPermission\PermissionBuilder;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'authorizable_models' => [
         // \App\Models\Post::class,

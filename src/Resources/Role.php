@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission\Resources;
 
 use BBSLab\NovaPermission\Contracts\HasAbilities;
 use BBSLab\NovaPermission\Traits\Authorizable;
 use BBSLab\NovaPermission\Traits\HasFieldName;
-use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Laravel\Nova\Fields\BelongsToMany;
 use Laravel\Nova\Fields\Boolean;
@@ -13,7 +14,9 @@ use Laravel\Nova\Fields\DateTime;
 use Laravel\Nova\Fields\ID;
 use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\Text;
+use Laravel\Nova\Http\Requests\NovaRequest;
 use Laravel\Nova\Resource;
+use Spatie\Permission\PermissionRegistrar;
 
 class Role extends Resource implements HasAbilities
 {
@@ -25,76 +28,50 @@ class Role extends Resource implements HasAbilities
         'view' => 'view role',
         'create' => 'create role',
         'update' => 'update role',
+        'replicate' => 'replicate role',
         'delete' => 'delete role',
+        'restore' => 'restore role',
+        'forceDelete' => 'forceDelete role',
     ];
 
     public static $canSeeOverridePermissionCallback = null;
 
-    /**
-     * The model the resource corresponds to.
-     *
-     * @var string
-     */
     public static $model;
+
+//    public static function newModel()
+//    {
+//        $model =  app(PermissionRegistrar::class)->getRoleClass();
+//
+//        return new $model;
+//    }
 
     public static function canSeeOverridePermmission($callback)
     {
         static::$canSeeOverridePermissionCallback = $callback;
     }
 
-    /**
-     * The single value that should be used to represent the resource when being displayed.
-     *
-     * @var string
-     */
     public static $title = 'name';
 
-    /**
-     * Get the search result subtitle for the resource.
-     *
-     * @return string|null
-     */
-    public function subtitle()
+    public function subtitle(): string
     {
         return "Guard: {$this->guard_name}";
     }
 
-    /**
-     * The columns that should be searched.
-     *
-     * @var array
-     */
     public static $search = [
         'name', 'guard_name',
     ];
 
-    /**
-     * Get the displayable label of the resource.
-     *
-     * @return string
-     */
-    public static function label()
+    public static function label(): string
     {
         return trans('nova-permission::resources.role.label');
     }
 
-    /**
-     * Get the displayable singular label of the resource.
-     *
-     * @return string
-     */
-    public static function singularLabel()
+    public static function singularLabel(): string
     {
         return trans('nova-permission::resources.role.singular_label');
     }
 
-    /**
-     * Get the fields displayed by the resource.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array
-     */
-    public function fields(Request $request)
+    public function fields(NovaRequest $request): array
     {
         $guardOptions = collect(config('auth.guards'))->mapWithKeys(function ($value, $key) {
             return [$key => $key];

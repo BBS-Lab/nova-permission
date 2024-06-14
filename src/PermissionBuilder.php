@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission;
 
+use Illuminate\Http\Request;
+use Laravel\Nova\Menu\MenuSection;
 use Laravel\Nova\Nova;
 use Laravel\Nova\Tool;
 
@@ -33,13 +37,10 @@ class PermissionBuilder extends Tool
         ]);
     }
 
-    /**
-     * Build the view that renders the navigation links for the tool.
-     *
-     * @return \Illuminate\View\View
-     */
-    public function renderNavigation()
+    public function menu(Request $request)
     {
-        return view('nova-permission::navigation');
+        return MenuSection::make('Permission Builder')
+            ->path('nova-permission')
+            ->icon('server');
     }
 }

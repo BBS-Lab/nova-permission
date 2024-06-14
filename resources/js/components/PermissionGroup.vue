@@ -1,9 +1,11 @@
 <template>
   <card>
-    <heading :level="2" class="border-b border-40 py-4 px-4 flex ">
-      <span class="inline-block font-semibold">{{ trans(group.display || 'Not grouped') }}</span>
-      <span class="inline-block bg-primary text-white rounded-full px-2 py-1 text-sm font-semibold ml-3">{{ group.guard_name}}</span>
-    </heading>
+    <div class="flex items border-b border-gray-200 dark:border-gray-700 py-4 px-4 space-x-3">
+      <heading :level="2">
+        {{ __(group.display || 'Not grouped') }}
+      </heading>
+      <CircleBadge>{{ group.guard_name }}</CircleBadge>
+    </div>
 
     <div v-if="loading" class="w-full p-4">
       <loader v-if="loading" width="60"></loader>
@@ -13,203 +15,177 @@
       {{ error }}
     </div>
 
-    <no-result-card
-      v-if="!roles.length && !loading"
-      :label="trans('No role selected')"
-    />
+    <no-result-card v-if="!roles.length && !loading" :label="__('No role selected')" />
 
     <table
       v-if="roles.length && !loading && !error"
-      class="table w-full overflow-x-scroll"
+      class="w-full divide-y divide-gray-100 dark:divide-gray-700 overflow-x-scroll"
       :data-testid="`resource-table-${group.group}`"
     >
-      <thead>
-      <tr>
-        <th class="w-1/6 bg-white text-left">{{ trans('Permissions') }}</th>
-        <th v-for="role in roles" class="bg-white justify-center flex-col" :key="role.id">
-          <div class="pb-2">
-            <checkbox
-              @input="toggleGroup(role)"
+      <thead class="bg-gray-50 dark:bg-gray-800">
+        <tr>
+          <th class="w-[1%] uppercase text-gray-500 text-xxs tracking-wide p-3 pl-4 text-left">
+            {{ __('Permissions') }}
+          </th>
+          <th v-for="role in roles" :key="role.id" class="uppercase text-gray-500 text-xxs tracking-wide p-3">
+            <CheckboxWithLabel
+              :name="role.name"
               :checked="roleChecked[role.id]"
-            />
-          </div>
-          <div>{{ role.name }}</div>
-        </th>
-      </tr>
+              @input="toggleGroup(role)"
+              :disabled="false"
+              class="inline-block"
+            >
+              <span>{{ role.name }}</span>
+            </CheckboxWithLabel>
+          </th>
+        </tr>
       </thead>
-      <tbody class="w-full">
-      <tr v-for="permission in permissions" :key="permission.id" class="w-full">
-        <td class="w-1/6">{{ trans(permission.name) }}</td>
-        <td v-for="role in roles" class="text-center" :key="role.id">
-          <checkbox
-            v-if="!loaders[permission.id][role.id]"
-            @input="toggle(role, permission)"
-            :checked="permission.roles[role.id]"
-          />
-          <template v-else>
-            <loader width="30"></loader>
-          </template>
-        </td>
-      </tr>
+      <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+        <tr v-for="permission in permissions" :key="permission.id" class="w-full">
+          <td
+            class="w-[1%] white-space-nowrap dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-900 p-3 pl-4"
+          >
+            {{ __(permission.name) }}
+          </td>
+          <td
+            v-for="role in roles"
+            :key="role.id"
+            class="dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-900 p-3"
+          >
+            <checkbox
+              v-if="!loaders[permission.id][role.id]"
+              @input="toggle(role, permission)"
+              :checked="permission.roles[role.id]"
+            />
+            <template v-else>
+              <loader width="30" class="mx-0"></loader>
+            </template>
+          </td>
+        </tr>
       </tbody>
     </table>
   </card>
 </template>
 
-<script>
-import { Badge, InteractsWithQueryString, Minimum } from 'laravel-nova'
-import CustomTranslation from './CustomTranslation'
-import NoResultCard from './NoResultCard'
-export default {
-  props: {
-    group: {
-      type: Object
-    },
-    roles: {
-      type: Array
-    },
-    search: {
-      type: String,
-      default: ''
-    }
-  },
+<script setup lang="ts">
+import { Group, Permission, Role } from '__types__'
+import { computed, onMounted, ref } from 'vue'
+import { useTranslation } from '@/hooks'
+import usePermissionStore from '@/stores/permission'
 
-  components: {
-    Badge,
-    NoResultCard
-  },
+interface Props {
+  group: Group
+  roles: Role[]
+  search?: string
+}
 
-  mixins: [
-    CustomTranslation,
-    InteractsWithQueryString,
-  ],
+const props = withDefaults(defineProps<Props>(), {
+  search: '',
+})
 
-  data: () => ({
-    loading: false,
-    error: null,
-    permissions: [],
-    loaders: {},
-  }),
+const { __ } = useTranslation()
 
-  async created() {
-    await this.getPermissions()
-  },
+const store = usePermissionStore()
 
-  computed: {
-    authorizable() {
-      return !!this.group.authorizable_id && !!this.group.authorizable_type
-    },
+// ACTIONS
+const getPermissions = () => {
+  loading.value = true
 
-    roleChecked() {
-      let checked = {}
+  store
+    .getPermissions(props.group)
+    .then(response => {
+      const result = response.data as unknown as Permission[]
 
-      _.each(this.roles, role => {
-        checked[role.id] = true
-        if (!this.permissions.length) {
+      result.forEach((permission: Permission) => {
+        loaders.value[permission.id] = {}
+        props.roles.forEach((role: Role) => {
+          loaders.value[permission.id][role.id] = false
+        })
+      })
+
+      permissions.value = result
+      loading.value = false
+    })
+    .catch((e: string) => {
+      error.value = e
+      loading.value = false
+    })
+}
+
+const toggleGroup = (role: Role) => toggle(role, null)
+const toggle = (role: Role, permission?: Permission) => {
+  if (permission) {
+    loaders.value[permission.id][role.id] = true
+  }
+
+  let newValue = permission ? !permission.roles[role.id] : !roleChecked.value[role.id]
+  let p = permission ? [permission] : permissions.value
+
+  store
+    .attachPermissions({
+      role: role.id,
+      permissions: p.map((p: Permission) => p.id),
+      value: newValue,
+    })
+    .then(response => {
+      p.forEach((permission: Permission) => {
+        permission.roles = Object.assign({}, permission.roles, { [role.id]: newValue })
+      })
+
+      window.Nova.success(response.data.message)
+    })
+    .catch((e: any) => {
+      window.Nova.error(e.message)
+    })
+    .finally(() => {
+      if (permission) {
+        loaders.value[permission.id][role.id] = false
+      }
+    })
+}
+
+// STATE
+const loading = ref<boolean>(false)
+const permissions = ref<Permission[]>([])
+const loaders = ref<{ [key: string]: { [key: string]: boolean } }>({})
+const error = ref<string | null>(null)
+
+// COMPUTED
+const roleChecked = computed(() => {
+  let checked: { [key: string]: boolean } = {}
+
+  props.roles.forEach((role: Role) => {
+    checked[role.id] = true
+
+    if (!permissions.value.length) {
+      checked[role.id] = false
+    } else {
+      permissions.value.forEach((permission: Permission) => {
+        if (!Object.prototype.hasOwnProperty.call(permission.roles, role.id) || !permission.roles[role.id]) {
           checked[role.id] = false
-        } else {
-          _.each(this.permissions, permission => {
-            if (!permission.roles.hasOwnProperty(role.id) || !permission.roles[role.id]) {
-              checked[role.id] = false
-              return false
-            }
-          })
+          return false
         }
       })
+    }
+  })
 
-      return checked
-    },
+  return checked
+})
 
-    permissionRequestQueryString() {
-      return {
-        search: this.search,
-      }
-    },
-  },
-
-  methods: {
-    getPermissions() {
-      this.loading = true
-
-      this.$nextTick(() => {
-        return Minimum(
-          this.getRequest(),
-          300
-        ).then(({ data }) => {
-          this.permissions = data
-
-          _.each(this.permissions, permission => {
-            this.loaders = Object.assign({}, this.loaders, { [permission.id]: {} })
-            _.each(this.roles, role => {
-              this.loaders[permission.id] = Object.assign({}, this.loaders[permission.id], { [role.id]: false })
-            })
-          })
-        }).catch(error => this.error = error)
-          .finally(() => this.loading = false)
-      })
-    },
-
-    getRequest() {
-      const { authorizable_id: id, authorizable_type: type, group, guard_name: guard} = this.group
-
-      return this.authorizable
-        ? Nova.request().post('/nova-vendor/nova-permission/permissions/authorizable', { guard, id, type }, {
-          params: this.permissionRequestQueryString
-        })
-        : Nova.request().post('/nova-vendor/nova-permission/permissions/group', { guard, group }, {
-          params: this.permissionRequestQueryString
-        })
-    },
-
-    setLoader(value, roleId, permission = null) {
-      let permissions = !!permission ? [permission] : this.permissions
-
-      _.each(permissions, p => {
-        this.loaders[p.id] = Object.assign({}, this.loaders[p.id], {[roleId]: value})
-      })
-    },
-
-    attach(role, permissions, attach) {
-      return Nova.request().post(`/nova-vendor/nova-permission/permissions/${role}/attach`, {
-        attach: attach,
-        permissions: permissions
-      })
-    },
-
-    toggle(role, permission = null) {
-      this.setLoader(true, role.id, permission)
-
-      let newValue = !!permission ? !permission.roles[role.id] : !this.roleChecked[role.id]
-      let permissions = !!permission ? [permission] : this.permissions
-
-      this.$nextTick(() => {
-        new Minimum(
-          this.attach(role.id, permissions.map(p => p.id), newValue),
-          300
-        ).then(({ data }) => {
-          _.each(permissions, permission => {
-            permission.roles = Object.assign({}, permission.roles, { [role.id]: newValue })
-          })
-          this.$toasted.show(data.message, {type: 'success'})
-        }).finally(() => this.setLoader(false, role.id, permission))
-      })
-    },
-
-    toggleGroup(role) {
-      this.toggle(role, null)
-    },
-  },
-}
+// HOOKS
+onMounted(() => {
+  getPermissions()
+})
 </script>
 
 <style lang="scss" scoped>
-  .table {
-    tr {
-      &:hover {
-        td {
-          background-color: inherit;
-        }
+.table {
+  tr {
+    &:hover {
+      td {
+        background-color: inherit;
       }
     }
   }
+}
 </style>
