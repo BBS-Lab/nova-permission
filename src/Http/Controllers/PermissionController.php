@@ -1,15 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission\Http\Controllers;
 
 use BBSLab\NovaPermission\Actions\GenerateResourcePermissionsAction;
+use BBSLab\NovaPermission\Contracts\Permission;
 use BBSLab\NovaPermission\Http\Requests\AttachRequest;
 use BBSLab\NovaPermission\Http\Requests\PermissionByAuthorizableRequest;
 use BBSLab\NovaPermission\Http\Requests\PermissionByGroupRequest;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Laravel\Nova\Events\ServingNova;
 use Laravel\Nova\Nova;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -23,8 +28,6 @@ class PermissionController
 
     /**
      * Create new PermissionController instance.
-     *
-     * @param  \Spatie\Permission\PermissionRegistrar  $registrar
      */
     public function __construct(PermissionRegistrar $registrar)
     {
@@ -34,24 +37,20 @@ class PermissionController
 
     protected function getRoles(): Collection
     {
-        return $this->roleModel->newQuery()
+        return $this->roleModel::query()
             ->select('id', 'name', 'guard_name')
             ->where('override_permission', '=', false)
             ->orderBy('name')
             ->get();
     }
 
-    /**
-     * @param  string $search
-     * @return \Illuminate\Support\Collection
-     */
-    protected function getSimpleGroups($search): Collection
+    protected function getSimpleGroups(string $search): Collection
     {
-        return $this->permissionModel->newQuery()
+        return $this->permissionModel::query()
             ->select('group', 'authorizable_id', 'authorizable_type', 'guard_name')
             ->distinct()
             ->whereNull(['authorizable_id', 'authorizable_id'])
-            ->when(! empty($search), function ($query) use ($search) {
+            ->when(!empty($search), function ($query) use ($search) {
                 return $query->where(function ($query) use ($search) {
                     $query->where('group', 'like', "%$search%")
                         ->orWhere('name', 'like', "%$search%");
@@ -60,11 +59,11 @@ class PermissionController
             ->orderBy('group')
             ->get()
             ->map(function ($permission) {
-                if (! empty($permission->group)) {
+                if (!empty($permission->group)) {
                     $key = Str::plural(Str::kebab($permission->group));
                     $resource = Nova::resourceForKey($key);
 
-                    if (! empty($resource)) {
+                    if (!empty($resource)) {
                         $permission->display = $resource::label();
                     }
                 }
@@ -73,18 +72,14 @@ class PermissionController
             });
     }
 
-    /**
-     * @param  string $search
-     * @return \Illuminate\Support\Collection
-     */
-    protected function getModelGroups($search): Collection
+    protected function getModelGroups(string $search): Collection
     {
-        return $this->permissionModel->newQuery()
+        return $this->permissionModel::query()
             ->select('authorizable_id', 'authorizable_type', 'guard_name')
             ->distinct()
             ->with('authorizable')
             ->whereNotNull(['authorizable_id', 'authorizable_id'])
-            ->when(! empty($search), function ($query) use ($search) {
+            ->when(!empty($search), function ($query) use ($search) {
                 return $query->where('name', 'like', "%$search%");
             })
             ->get()
@@ -101,104 +96,71 @@ class PermissionController
             ->filter();
     }
 
-    /**
-     * Get the permission groups.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function groups(Request $request)
+    public function groups(Request $request): JsonResponse
     {
-        $search = trim($request->query('search'));
+        $search = trim($request->query('search', ''));
 
         return response()->json([
             'roles' => $this->getRoles(),
             'groups' => $this->getSimpleGroups($search)
-                ->concat($this->getModelGroups($search))
+                ->concat($this->getModelGroups($search)->toArray())
                 ->sortBy('group')
                 ->values()
                 ->all(),
         ]);
     }
 
-    /**
-     * @param  string  $guard
-     * @param  string  $search
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
     protected function getPermissionQuery(string $guard, string $search): EloquentBuilder
     {
-        return $this->permissionModel->newQuery()
+        return $this->permissionModel::query()
             ->select('id', 'name', 'guard_name')
             ->with('roles')
             ->where('guard_name', '=', $guard)
-            ->when(! empty($search), function (EloquentBuilder $query) use ($search) {
+            ->when(!empty($search), function (EloquentBuilder $query) use ($search) {
                 return $query->where('name', 'like', "%$search%");
             })
             ->orderBy('name');
     }
 
-    /**
-     * Get permissions by group name.
-     *
-     * @param  \BBSLab\NovaPermission\Http\Requests\PermissionByGroupRequest  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function permissionsByGroup(PermissionByGroupRequest $request)
+    public function permissionsByGroup(PermissionByGroupRequest $request): JsonResponse
     {
         $roles = $this->getRoles();
 
         $permissions = $this->getPermissionQuery($request->guard, $request->searchValue())
+            ->whereNull(['authorizable_id', 'authorizable_type'])
             ->when(empty($request->group), function (EloquentBuilder $query) {
-                return $query->whereNull(['group', 'authorizable_id', 'authorizable_type']);
+                return $query->whereNull('group');
             })
-            ->when(! empty($request->group), function (EloquentBuilder $query) use ($request) {
-                return $query->where('group', '=', $request->group)
-                    ->whereNull(['authorizable_id', 'authorizable_type']);
+            ->when(!empty($request->group), function (EloquentBuilder $query) use ($request) {
+                return $query->where('group', '=', $request->group);
             })
             ->get()
-            ->map
-            ->serializeForPermissionBuilder($roles);
+            ->map(fn (Permission $permission) => $permission->serializeForPermissionBuilder($roles));
 
         return response()->json($permissions);
     }
 
-    /**
-     * Get permissions by authorizable information.
-     *
-     * @param  \BBSLab\NovaPermission\Http\Requests\PermissionByAuthorizableRequest  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function permissionsByAuthorizable(PermissionByAuthorizableRequest $request)
+    public function permissionsByAuthorizable(PermissionByAuthorizableRequest $request): JsonResponse
     {
         $roles = $this->getRoles();
 
         $permissions = $this->getPermissionQuery($request->guard, $request->searchValue())
-            ->where([
-                'authorizable_id' => $request->id,
-                'authorizable_type' => $request->type,
-            ])
+            ->where(['authorizable_id' => $request->id, 'authorizable_type' => $request->type])
             ->get()
-            ->map
-            ->serializeForPermissionBuilder($roles);
+            ->map(fn (Permission $permission) => $permission->serializeForPermissionBuilder($roles));
 
         return response()->json($permissions);
     }
 
-    /**
-     * Attach or detach permissions.
-     *
-     * @param  \BBSLab\NovaPermission\Http\Requests\AttachRequest  $request
-     * @param $role
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function attachPermission(AttachRequest $request, $role)
+    public function attachPermission(AttachRequest $request, $role): JsonResponse
     {
         /** @var \BBSLab\NovaPermission\Models\Role $role */
-        $role = $this->roleModel->newQuery()->findOrFail($role);
+        $role = $this->roleModel::query()->findOrFail($role);
 
         $method = $request->attach ? 'syncWithoutDetaching' : 'detach';
-        $message = $request->attach ? 'nova-permission::permission-builder.attached' : 'nova-permission::permission-builder.detached';
+        $message = $request->attach
+            ? 'nova-permission::permission-builder.attached'
+            : 'nova-permission::permission-builder.detached';
 
         $role->permissions()->{$method}($request->permissions);
 
@@ -209,14 +171,12 @@ class PermissionController
         ]);
     }
 
-    /**
-     * Generate resources permissions.
-     *
-     * @param  \BBSLab\NovaPermission\Actions\GenerateResourcePermissionsAction  $generateResourcePermissionsAction
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function generatePermission(GenerateResourcePermissionsAction $generateResourcePermissionsAction)
-    {
+    public function generatePermission(
+        Request $request,
+        GenerateResourcePermissionsAction $generateResourcePermissionsAction
+    ): JsonResponse {
+        ServingNova::dispatch($request);
+
         try {
             $generateResourcePermissionsAction->execute();
 

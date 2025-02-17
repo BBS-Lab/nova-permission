@@ -9,3 +9,6 @@ phpunit.xml
 .DS_Store
 Thumbs.db
 yarn.lock
+/build
+database/migrations/*.php
+auth.json

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use BBSLab\NovaPermission\Http\Controllers\PermissionController;
 use Illuminate\Support\Facades\Route;
 

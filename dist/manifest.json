@@ -1,0 +1,11 @@
+{
+  "js/tool.ts": {
+    "file": "js/tool.js",
+    "isEntry": true,
+    "src": "js/tool.ts"
+  },
+  "style.css": {
+    "file": "css/tool.css",
+    "src": "style.css"
+  }
+}

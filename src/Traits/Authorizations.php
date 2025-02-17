@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission\Traits;
 
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -16,15 +18,11 @@ trait Authorizations
         /** @var \Spatie\Permission\PermissionRegistrar $registrar */
         $registrar = app(PermissionRegistrar::class);
 
-        return $this->morphMany(get_class($registrar->getPermissionClass()), 'authorizable');
+        return $this->morphMany($registrar->getPermissionClass(), 'authorizable');
     }
 
     /**
      * Scope the query to entries the user is authorized to retrieve.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param $user
-     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeAuthorize(EloquentBuilder $query, $user): EloquentBuilder
     {
@@ -46,7 +44,7 @@ trait Authorizations
                         $query->select(DB::raw(1))
                             ->from("$modeHasPermissionsTable as mhp")
                             ->whereRaw('mhp.permission_id = p.id')
-                            ->where('mhp.model_type', '=', get_class($user))
+                            ->where('mhp.model_type', '=', $user->getMorphClass())
                             ->where('mhp.model_id', '=', $user->getKey());
                     })->orWhereExists(function (QueryBuilder $query) use (
                         $user, $roleHasPermissionsTable, $modelHasRolesTable
@@ -56,7 +54,7 @@ trait Authorizations
                             ->whereRaw('rhp.permission_id = p.id')
                             ->join("{$modelHasRolesTable} as mhr", function (JoinClause $join) use ($user) {
                                 $join->on('rhp.role_id', '=', 'mhr.role_id')
-                                    ->where('mhr.model_type', '=', get_class($user))
+                                    ->where('mhr.model_type', '=', $user->getMorphClass())
                                     ->where('mhr.model_id', '=', $user->getKey());
                             });
                     })->orWhereExists(function (QueryBuilder $query) use (
@@ -66,7 +64,7 @@ trait Authorizations
                             ->from($modelHasRolesTable)
                             ->join($rolesTable, "{$rolesTable}.id", '=', "{$modelHasRolesTable}.role_id")
                             ->where("{$rolesTable}.override_permission", '=', true)
-                            ->where("{$modelHasRolesTable}.model_type", '=', get_class($user))
+                            ->where("{$modelHasRolesTable}.model_type", '=', $user->getMorphClass())
                             ->where("{$modelHasRolesTable}.model_id", '=', $user->getkey());
                     });
                 });

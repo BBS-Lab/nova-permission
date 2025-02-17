@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission\Traits;
 
 use Illuminate\Http\Request;
@@ -13,7 +15,7 @@ trait Authorizable
 
     public static function hasAbilities(): bool
     {
-        return isset(static::$permissionsForAbilities) && ! empty(static::$permissionsForAbilities);
+        return isset(static::$permissionsForAbilities) && !empty(static::$permissionsForAbilities);
     }
 
     public static function cacheTtl()
@@ -36,15 +38,14 @@ trait Authorizable
     /**
      * Determine if the resource should be available for the given request.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return bool
      */
     public static function authorizedToViewAny(Request $request)
     {
         $key = static::cacheKey('viewAny', $request);
 
-        return Cache::remember($key, static::cacheTtl(), function () use ($request) {
-            if (! static::authorizable()) {
+        return Cache::remember($key, static::cacheTtl(), function () {
+            if (!static::authorizable()) {
                 return true;
             }
 
@@ -57,7 +58,6 @@ trait Authorizable
     /**
      * Determine if the current user can create new resources.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return bool
      */
     public static function authorizedToCreate(Request $request)
@@ -76,7 +76,6 @@ trait Authorizable
     /**
      * Determine if the current user can view the given resource.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  string  $ability
      * @return bool
      */

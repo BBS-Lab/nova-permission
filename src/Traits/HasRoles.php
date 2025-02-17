@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace BBSLab\NovaPermission\Traits;
 
 use BBSLab\NovaPermission\Contracts\HasAuthorizations;
@@ -44,7 +46,7 @@ trait HasRoles
 
         $key = $this->getOverridePermissionCacheKey();
 
-        return $cache->remember($key, PermissionRegistrar::$cacheExpirationTime, function () {
+        return $cache->remember($key, app(PermissionRegistrar::class)->cacheExpirationTime, function () {
             $guard = config('nova.guard') ?? config('auth.defaults.guard');
 
             return $this->roles()
@@ -56,7 +58,7 @@ trait HasRoles
 
     public function hasPermissionToOnModel($permission, $model = null, $guardName = null): bool
     {
-        if (empty($model) || ! $model instanceof HasAuthorizations) {
+        if (empty($model) || !$model instanceof HasAuthorizations) {
             return $this->can($permission);
         }
 
@@ -68,18 +70,20 @@ trait HasRoles
             Str::snake($permission),
         ]);
 
+        $registrar = app(PermissionRegistrar::class);
+
         /** @var \Illuminate\Contracts\Cache\Factory $cacheManager */
         $cacheManager = app('cache');
 
         $authorization = $cacheManager->store()
-            ->remember($key, PermissionRegistrar::$cacheExpirationTime, function () use ($permission, $model, $guardName) {
+            ->remember($key, $registrar->cacheExpirationTime, function () use ($permission, $model, $guardName) {
                 return $model->authorizations()
                     ->where('name', '=', $permission)
                     ->where('guard_name', '=', $guardName ?? $this->getDefaultGuardName())
                     ->first();
             });
 
-        return ! empty($authorization)
+        return !empty($authorization)
             ? $this->hasPermissionTo($authorization)
             : $this->can($permission);
     }
