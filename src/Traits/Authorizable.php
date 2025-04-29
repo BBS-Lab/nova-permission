@@ -79,12 +79,12 @@ trait Authorizable
      * @param  string  $ability
      * @return bool
      */
-    public function authorizedTo(Request $request, $ability)
+    public function authorizedTo(Request $request, string $ability): bool
     {
         $key = static::cacheKey($ability, $request, $this->resource);
 
         return Cache::remember($key, static::cacheTtl(), function () use ($ability) {
-            return static::authorizable() ? Gate::check($ability, $this->resource) : true;
+            return $this->resource->authorizedTo($ability);
         });
     }
 }

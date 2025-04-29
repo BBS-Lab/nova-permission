@@ -6,8 +6,8 @@ namespace Workbench\App\Providers;
 
 use BBSLab\NovaPermission\PermissionBuilder;
 use Illuminate\Support\Facades\Gate;
+use Laravel\Nova\DevTool\DevTool;
 use Laravel\Nova\NovaApplicationServiceProvider;
-use NovaKit\NovaDevTool\Nova;
 use Orchestra\Workbench\Workbench;
 
 class NovaServiceProvider extends NovaApplicationServiceProvider
@@ -26,7 +26,7 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
      */
     protected function routes(): void
     {
-        Nova::routes()
+        DevTool::routes()
             ->withAuthenticationRoutes()
             ->withPasswordResetRoutes()
             ->register();
@@ -50,7 +50,7 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
     protected function dashboards(): array
     {
         return [
-            new \Laravel\Nova\Dashboards\Main(),
+            new \Laravel\Nova\Dashboards\Main,
         ];
     }
 
@@ -71,7 +71,7 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
      */
     protected function resources(): void
     {
-        Nova::resourcesIn(Workbench::path('app/Nova'));
+        DevTool::resourcesIn(Workbench::path('app/Nova'));
     }
 
     /**
