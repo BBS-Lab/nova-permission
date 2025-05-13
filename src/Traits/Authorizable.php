@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Nova\Authorizable as BaseTrait;
+use Laravel\Nova\Nova;
+use Laravel\Nova\Util;
 
 trait Authorizable
 {
@@ -44,14 +46,14 @@ trait Authorizable
     {
         $key = static::cacheKey('viewAny', $request);
 
-        return Cache::remember($key, static::cacheTtl(), function () {
+        return Cache::remember($key, static::cacheTtl(), function () use ($request) {
             if (!static::authorizable()) {
                 return true;
             }
 
-            return method_exists(Gate::getPolicyFor(static::newModel()), 'viewAny')
-                ? Gate::check('viewAny', get_class(static::newModel()))
-                : true;
+            $resource = Util::resolveResourceOrModelForAuthorization(static::newResource());
+
+            return !method_exists(Gate::getPolicyFor($resource), 'viewAny') || Gate::forUser(Nova::user($request))->check('viewAny', $resource::class);
         });
     }
 
@@ -83,8 +85,10 @@ trait Authorizable
     {
         $key = static::cacheKey($ability, $request, $this->resource);
 
-        return Cache::remember($key, static::cacheTtl(), function () use ($ability) {
-            return $this->resource->authorizedTo($ability);
+        return Cache::remember($key, static::cacheTtl(), function () use ($request, $ability) {
+            $resource = Util::resolveResourceOrModelForAuthorization($this->resource);
+
+            return !static::authorizable() || Gate::forUser(Nova::user($request))->check($ability, $resource);
         });
     }
 }
