@@ -8,6 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Nova\Authorizable as BaseTrait;
+use Laravel\Nova\Http\Resources\Resource;
+use Laravel\Nova\Nova;
+use Laravel\Nova\Util;
 
 trait Authorizable
 {
@@ -23,7 +26,7 @@ trait Authorizable
         return config('nova-permission.gate_cache');
     }
 
-    public static function cacheKey(string $action, $request, $resource = null)
+    public static function cacheKey(string $action, $request, $resource = null): string
     {
         return implode(':', array_filter([
             'administrator',
@@ -38,29 +41,31 @@ trait Authorizable
     /**
      * Determine if the resource should be available for the given request.
      *
+     * @param Request $request
      * @return bool
      */
-    public static function authorizedToViewAny(Request $request)
+    public static function authorizedToViewAny(Request $request): bool
     {
         $key = static::cacheKey('viewAny', $request);
 
-        return Cache::remember($key, static::cacheTtl(), function () {
+        return Cache::remember($key, static::cacheTtl(), function () use ($request) {
             if (!static::authorizable()) {
                 return true;
             }
 
-            return method_exists(Gate::getPolicyFor(static::newModel()), 'viewAny')
-                ? Gate::check('viewAny', get_class(static::newModel()))
-                : true;
+            $resource = Util::resolveResourceOrModelForAuthorization(static::newResource());
+
+            return !method_exists(Gate::getPolicyFor($resource), 'viewAny') || Gate::forUser(Nova::user($request))->check('viewAny', $resource::class);
         });
     }
 
     /**
      * Determine if the current user can create new resources.
      *
+     * @param Request $request
      * @return bool
      */
-    public static function authorizedToCreate(Request $request)
+    public static function authorizedToCreate(Request $request): bool
     {
         $key = static::cacheKey('create', $request);
 
@@ -76,15 +81,28 @@ trait Authorizable
     /**
      * Determine if the current user can view the given resource.
      *
-     * @param  string  $ability
+     * @param Request $request
+     * @param string $ability
      * @return bool
      */
     public function authorizedTo(Request $request, string $ability): bool
     {
         $key = static::cacheKey($ability, $request, $this->resource);
 
-        return Cache::remember($key, static::cacheTtl(), function () use ($ability) {
-            return $this->resource->authorizedTo($ability);
+        return Cache::remember($key, static::cacheTtl(), function () use ($request, $ability) {
+            $resource = $this->resource;
+
+            if (!$resource instanceof Resource) {
+                $resourceClass = Nova::resourceForModel($resource);
+
+                if (!$resourceClass) {
+                    return false;
+                }
+
+                $resource = new $resourceClass($resource);
+            }
+
+            return !static::authorizable() || Gate::forUser(Nova::user($request))->check($ability, Util::resolveResourceOrModelForAuthorization($resource));
         });
     }
 }
