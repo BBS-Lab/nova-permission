@@ -175,8 +175,7 @@ class PermissionController
         Request $request,
         GenerateResourcePermissionsAction $generateResourcePermissionsAction
     ): JsonResponse {
-        ServingNova::dispatch($request);
-
+        ServingNova::dispatch(app(), $request);
         try {
             $generateResourcePermissionsAction->execute();
 
