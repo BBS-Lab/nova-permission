@@ -1,0 +1,32 @@
+name: mutation
+
+on:
+  push:
+    branches: [master]
+    paths: ['src/**', 'tests/**', 'composer.json']
+  pull_request:
+    branches: [master]
+    paths: ['src/**', 'tests/**', 'composer.json']
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: pcov
+
+      - name: Authenticate Nova
+        run: composer config http-basic.nova.laravel.com "${{ secrets.NOVA_USERNAME }}" "${{ secrets.NOVA_LICENSE_KEY }}"
+
+      - name: Install Composer dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Run mutation tests
+        run: composer test-mutation

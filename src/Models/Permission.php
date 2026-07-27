@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace BBSLab\NovaPermission\Models;
 
 use BBSLab\NovaPermission\Contracts\Permission as PermissionContract;
+use BBSLab\NovaPermission\Support\PermissionCache;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission as Model;
 use Spatie\Permission\PermissionRegistrar;
@@ -21,14 +22,14 @@ use Spatie\Permission\PermissionRegistrar;
  * @property string $group
  * @property int $authorizable_id
  * @property string $authorizable_type
- * @property \Illuminate\Database\Eloquent\Model $authorizable
- * @property \Illuminate\Database\Eloquent\Collection $roles
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property \Illuminate\Database\Eloquent\Model|null $authorizable
+ * @property \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Database\Eloquent\Model> $roles
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class Permission extends Model implements PermissionContract
 {
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
@@ -41,16 +42,27 @@ class Permission extends Model implements PermissionContract
         });
     }
 
+    /**
+     * @return MorphTo<\Illuminate\Database\Eloquent\Model, \Illuminate\Database\Eloquent\Model>
+     */
     public function authorizable(): MorphTo
     {
-        return $this->morphTo();
+        /** @var MorphTo<\Illuminate\Database\Eloquent\Model, \Illuminate\Database\Eloquent\Model> $relation */
+        $relation = $this->morphTo();
+
+        return $relation;
     }
 
+    /**
+     * @param  Collection<int, Role>|null  $roles
+     * @return array<string, mixed>
+     */
     public function serializeForPermissionBuilder(?Collection $roles = null): array
     {
         if (empty($roles)) {
-            $roles = app(PermissionRegistrar::class)->getRoleClass()
-                ->newQuery()
+            $roleClass = app(PermissionRegistrar::class)->getRoleClass();
+
+            $roles = $roleClass::query()
                 ->orderBy('name')
                 ->get();
         }
@@ -64,13 +76,13 @@ class Permission extends Model implements PermissionContract
             'roles' => array_replace(
                 $roles,
                 $this->roles->mapWithKeys(function ($role) {
-                    return [$role->id => true];
+                    return [$role->getKey() => true];
                 })->toArray()
             ),
         ];
     }
 
-    public function forgetPermissionFromCache()
+    public function forgetPermissionFromCache(): void
     {
         if ($this->authorizable) {
             $key = implode(':', [
@@ -81,7 +93,7 @@ class Permission extends Model implements PermissionContract
                 Str::snake($this->getOriginal('name', $this->name)),
             ]);
 
-            Cache::forget($key);
+            PermissionCache::forget($key);
         }
     }
 }

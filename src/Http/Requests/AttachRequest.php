@@ -8,7 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * @property array $permissions
+ * @property array<int, int> $permissions
  * @property bool $attach
  */
 class AttachRequest extends FormRequest
@@ -18,6 +18,9 @@ class AttachRequest extends FormRequest
         return true;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Config;
 use Inertia\Middleware;
 use Laravel\Nova\Http\Resources\UserResource;
 use Laravel\Nova\Nova;
+use Symfony\Component\HttpFoundation\Response;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -49,7 +50,7 @@ class HandleInertiaRequests extends Middleware
             },
             'currentUser' => function () use ($request) {
                 return with(Nova::user($request), function ($user) use ($request) {
-                    return !is_null($user) ? UserResource::make($user)->toArray($request) : null;
+                    return ! is_null($user) ? UserResource::make($user)->toArray($request) : null;
                 });
             },
             'validLicense' => true,
@@ -59,7 +60,7 @@ class HandleInertiaRequests extends Middleware
     /**
      * Handle the incoming request.
      *
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @return Response
      */
     public function handle(Request $request, Closure $next)
     {

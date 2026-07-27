@@ -16,6 +16,9 @@ abstract class Policy
 {
     use HandlesAuthorization;
 
+    /**
+     * @return class-string<Model>
+     */
     abstract protected function model(): string;
 
     public static function guard(): string
@@ -23,24 +26,30 @@ abstract class Policy
         return config('nova.guard') ?? config('auth.defaults.guard');
     }
 
-    protected function getPermissionFromResource(string $permission, $model = null): ?string
+    /**
+     * @param  Model|class-string<Model>|null  $model
+     */
+    protected function getPermissionFromResource(string $permission, Model|string|null $model = null): ?string
     {
-        if (!$resourceClass = Nova::resourceForModel($model ?? $this->model())) {
+        if (! $resourceClass = Nova::resourceForModel($model ?? $this->model())) {
             return null;
         }
 
-        if (!is_subclass_of($resourceClass, HasAbilities::class)) {
+        if (! is_subclass_of($resourceClass, HasAbilities::class)) {
             return null;
         }
 
-        if (!$resourceClass::hasAbilities()) {
+        if (! $resourceClass::hasAbilities()) {
             return null;
         }
 
         return Arr::get($resourceClass::$permissionsForAbilities, $permission);
     }
 
-    protected function getPermissionName(string $permission, $model = null): string
+    /**
+     * @param  Model|class-string<Model>|null  $model
+     */
+    protected function getPermissionName(string $permission, Model|string|null $model = null): string
     {
         return $this->getPermissionFromResource($permission, $model) ?? $permission.' '.Str::snake(
             class_basename($model ?? $this->model()),
@@ -63,59 +72,75 @@ abstract class Policy
         );
     }
 
-    public function viewAny(Authorizable $user)
+    public function viewAny(Authorizable $user): ?bool
     {
         if ($this->can($user, 'viewAny')) {
             return true;
         }
+
+        return null;
     }
 
-    public function view(Authorizable $user, $model)
+    public function view(Authorizable $user, Model $model): ?bool
     {
         if ($this->can($user, 'view', $model)) {
             return true;
         }
+
+        return null;
     }
 
-    public function create(Authorizable $user)
+    public function create(Authorizable $user): ?bool
     {
         if ($this->can($user, 'create')) {
             return true;
         }
+
+        return null;
     }
 
-    public function update(Authorizable $user, $model)
+    public function update(Authorizable $user, Model $model): ?bool
     {
         if ($this->can($user, 'update', $model)) {
             return true;
         }
+
+        return null;
     }
 
-    public function replicate(Authorizable $user, $model)
+    public function replicate(Authorizable $user, Model $model): ?bool
     {
         if ($this->can($user, 'replicate', $model)) {
             return true;
         }
+
+        return null;
     }
 
-    public function delete(Authorizable $user, $model)
+    public function delete(Authorizable $user, Model $model): ?bool
     {
         if ($this->can($user, 'delete', $model)) {
             return true;
         }
+
+        return null;
     }
 
-    public function restore(Authorizable $user, $model)
+    public function restore(Authorizable $user, Model $model): ?bool
     {
         if ($this->can($user, 'restore', $model)) {
             return true;
         }
+
+        return null;
     }
 
-    public function forceDelete(Authorizable $user, $model)
+    public function forceDelete(Authorizable $user, Model $model): ?bool
     {
         if ($this->can($user, 'forceDelete', $model)) {
             return true;
         }
+
+        return null;
     }
 }

@@ -1,6 +1,7 @@
 providers:
   - Laravel\Nova\NovaCoreServiceProvider
   - Spatie\Permission\PermissionServiceProvider
+  - BBSLab\NovaPermission\NovaPermissionServiceProvider
   - Workbench\App\Providers\NovaServiceProvider
 
 migrations:
@@ -11,7 +12,8 @@ seeders:
 
 workbench:
   start: /nova
-  user: admin@laravel.com
+  # No auto-login `user:` — it re-authenticates on every request and would
+  # override Nova impersonation. Log in manually (admin@laravel.com / password).
   build:
     - asset-publish
     - create-sqlite-db
@@ -22,13 +24,10 @@ workbench:
   sync:
     - from: ./workbench/config
       to: config
-    - from: ray.php
-      to: ray.php
 purge:
   directories:
     - lang/*
     - public/vendor/*
-    - database/migrations/*
-    - config/*
 env:
   - AUTH_MODEL=Workbench\App\Models\User
+  - CACHE_STORE=array

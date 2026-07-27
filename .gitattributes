@@ -1,0 +1,31 @@
+* text=auto eol=lf
+
+# Files & directories excluded from the distributed Composer package.
+# The compiled tool assets in /dist ship; the JS/TS sources and build config do not.
+/.github                export-ignore
+/art                    export-ignore
+/tests                  export-ignore
+/workbench              export-ignore
+/resources/js           export-ignore
+/resources/css          export-ignore
+/.editorconfig          export-ignore
+/.eslintrc              export-ignore
+/.gitattributes         export-ignore
+/.gitignore             export-ignore
+/.nvmrc                 export-ignore
+/.prettierrc            export-ignore
+/generators.js          export-ignore
+/package.json           export-ignore
+/postcss.config.cjs     export-ignore
+/tailwind.config.cjs    export-ignore
+/tsconfig.json          export-ignore
+/tsconfig.node.json     export-ignore
+/vite.config.ts         export-ignore
+/phpunit.xml.dist       export-ignore
+/phpstan.neon.dist      export-ignore
+/phpstan-baseline.neon  export-ignore
+/pint.json              export-ignore
+/testbench.yaml         export-ignore
+/CONTRIBUTING.md        export-ignore
+/CHANGELOG.md           export-ignore
+/SECURITY.md            export-ignore

@@ -1,4 +1,4 @@
-import { ApiResponse, ErrorsBag, Group, Permission, Role } from '__types__'
+import { ApiResponse, ErrorsBag, Group, Role } from '__types__'
 import { AxiosResponse } from 'axios'
 import _ from 'lodash'
 import { acceptHMRUpdate, defineStore } from 'pinia'
@@ -10,7 +10,6 @@ interface State {
   groups: Group[]
   roles: Role[]
   checked: Record<string, boolean>
-  permissions: Record<number, Permission[]>
 
   error?: { attribute: string; bag?: ErrorsBag }
 
@@ -28,7 +27,6 @@ const usePermissionStore = defineStore('permission', {
     groups: [],
     roles: [],
     checked: {},
-    permissions: [],
 
     ready: false,
     isFetchingData: false,
@@ -94,8 +92,6 @@ const usePermissionStore = defineStore('permission', {
     setQueryString({ parameters }: { parameters: Record<string, string | number | null | undefined> }) {
       const searchParams = new URLSearchParams(window.location.search)
 
-      const page = window.Nova.app.config.globalProperties.$inertia.page
-
       for (const [key, value] of Object.entries(parameters)) {
         const content = value?.toString()
 
@@ -105,17 +101,18 @@ const usePermissionStore = defineStore('permission', {
           continue
         }
 
-        if (content?.length > 0) {
-          searchParams.set(key, content)
-        }
+        searchParams.set(key, content)
       }
 
-      if (page.url !== `${window.location.pathname}?${searchParams}`) {
-        page.url = `${window.location.pathname}?${searchParams}`
+      // Keep the search term in the URL (shareable / survives reload) via the
+      // History API. We deliberately avoid Inertia's page object here — Nova 5
+      // does not expose `$inertia.page` on the global properties, and reaching
+      // for it threw and aborted the search commit before the re-fetch ran.
+      const query = searchParams.toString()
+      const target = `${window.location.pathname}${query.length > 0 ? `?${query}` : ''}`
 
-        const separator = searchParams.toString().length > 0 ? '?' : ''
-
-        window.history.pushState(page, '', `${window.location.pathname}${separator}${searchParams}`)
+      if (target !== `${window.location.pathname}${window.location.search}`) {
+        window.history.pushState(window.history.state, '', target)
       }
     },
 
@@ -138,21 +135,25 @@ const usePermissionStore = defineStore('permission', {
     async data(): Promise<void> {
       this.isFetchingData = true
 
-      const { data } = await this.get({
-        path: '/groups',
-        params: {
-          search: this.search,
-        },
-      })
+      try {
+        const { data } = await this.get({
+          path: '/groups',
+          params: {
+            search: this.search,
+          },
+        })
 
-      this.groups = data.groups
-      this.roles = data.roles
+        this.groups = data.groups
+        this.roles = data.roles
 
-      _.each(this.roles, role => {
-        this.checked = Object.assign({}, this.checked, { [role.id]: true })
-      })
-
-      this.isFetchingData = false
+        _.each(this.roles, role => {
+          this.checked = Object.assign({}, this.checked, { [role.id]: true })
+        })
+      } finally {
+        // Always clear the flag so a failed fetch can't leave the tool spinning
+        // forever (the client interceptor surfaces the error to the user).
+        this.isFetchingData = false
+      }
     },
 
     /**
@@ -186,10 +187,11 @@ const usePermissionStore = defineStore('permission', {
 
         window.Nova.success(data.message)
 
-        this.data()
+        await this.data()
       } catch (error: any) {
-        console.error(error)
         window.Nova.error(error.message)
+      } finally {
+        this.isGeneratingPermissions = false
       }
     },
 

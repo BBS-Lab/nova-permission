@@ -32,6 +32,7 @@ class NovaPermissionServiceProvider extends PackageServiceProvider
                 'add_authorizable_and_group_to_permissions_table',
                 'add_override_permission_to_roles_table',
             ])
+            ->runsMigrations()
             ->hasCommand(GenerateResourcePermissions::class);
     }
 
@@ -60,8 +61,12 @@ class NovaPermissionServiceProvider extends PackageServiceProvider
     protected function registerResources(PermissionRegistrar $registrar): void
     {
         Model::unguard(true);
-        Permission::$model = $registrar->getPermissionClass();
-        Role::$model = $registrar->getRoleClass();
+        /** @var class-string<Model> $permissionModel */
+        $permissionModel = $registrar->getPermissionClass();
+        Permission::$model = $permissionModel;
+        /** @var class-string<Model> $roleModel */
+        $roleModel = $registrar->getRoleClass();
+        Role::$model = $roleModel;
         Model::unguard(false);
 
         Nova::resources([

@@ -1,0 +1,26 @@
+name: code-style
+
+on:
+  push:
+    branches: [master]
+    paths: ['**.php', 'pint.json']
+  pull_request:
+    branches: [master]
+    paths: ['**.php', 'pint.json']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Check code style with Pint
+        uses: aglipanci/laravel-pint-action@2.6
+        with:
+          args: '--test'

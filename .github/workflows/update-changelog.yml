@@ -1,0 +1,31 @@
+name: update-changelog
+
+on:
+  release:
+    types: [released]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: master
+
+      - name: Update Changelog
+        uses: stefanzweifel/changelog-updater-action@v1
+        with:
+          latest-version: ${{ github.event.release.name || github.event.release.tag_name }}
+          release-notes: ${{ github.event.release.body }}
+
+      - name: Commit updated changelog
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          branch: master
+          commit_message: 'docs: update CHANGELOG'
+          file_pattern: CHANGELOG.md
