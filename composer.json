@@ -28,7 +28,7 @@
         "php": "^8.2",
         "laravel/nova": "^4.0 || ^5.0",
         "spatie/laravel-package-tools": "^1.92.4",
-        "spatie/laravel-permission": "^6.17.0"
+        "spatie/laravel-permission": "^8.3.0"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
