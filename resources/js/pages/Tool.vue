@@ -104,10 +104,16 @@ const error = ref<Error | null>(null)
 // triggers the re-fetch) is debounced so we don't hit the API on every keystroke.
 const keyword = ref<string>(store.search ?? '')
 const searching = ref<boolean>(false)
+// Monotonic token: only the latest search clears the spinner, so an earlier
+// (slower) request resolving after a newer one can't hide the spinner early.
+let searchToken = 0
 const commitSearch = _.debounce((value: string) => {
+  const token = ++searchToken
   store.setSearch(value)
   store.data().finally(() => {
-    searching.value = false
+    if (token === searchToken) {
+      searching.value = false
+    }
   })
 }, 500)
 

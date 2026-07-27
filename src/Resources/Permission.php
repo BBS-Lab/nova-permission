@@ -20,7 +20,7 @@ use Laravel\Nova\Http\Requests\NovaRequest;
 use Laravel\Nova\Resource;
 
 /**
- * @extends resource<Model>
+ * @extends \Laravel\Nova\Resource<Model>
  *
  * @property-read string $guard_name
  */
