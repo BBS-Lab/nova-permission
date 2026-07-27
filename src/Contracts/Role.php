@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace BBSLab\NovaPermission\Contracts;
 
+use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Contracts\Role as Contract;
 
 /**
- * @mixin \Illuminate\Database\Eloquent\Model
+ * @mixin Model
  */
-interface Role extends Contract
-{
-}
+interface Role extends Contract {}

@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace BBSLab\NovaPermission\Http\Middleware;
 
 use BBSLab\NovaPermission\PermissionBuilder;
+use Closure;
+use Illuminate\Http\Request;
 use Laravel\Nova\Nova;
+use Laravel\Nova\Tool;
+use Symfony\Component\HttpFoundation\Response;
 
 class Authorize
 {
     /**
-     * Handle the incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @return \Illuminate\Http\Response
+     * @param  Closure(Request): Response  $next
      */
-    public function handle($request, $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $tool = collect(Nova::registeredTools())->first([$this, 'matchesTool']);
 
@@ -25,11 +25,8 @@ class Authorize
 
     /**
      * Determine whether this tool belongs to the package.
-     *
-     * @param  \Laravel\Nova\Tool  $tool
-     * @return bool
      */
-    public function matchesTool($tool)
+    public function matchesTool(Tool $tool): bool
     {
         return $tool instanceof PermissionBuilder;
     }

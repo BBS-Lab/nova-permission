@@ -7,18 +7,19 @@
 
       <div class="flex gap-2 mb-6">
         <!-- Search -->
-        <IndexSearchInput
-          class="relative h-9 w-full md:w-1/3 md:shrink-0"
-          v-model="currentSearch"
-          @update:keyword="setSearch($event)"
-        />
+        <div class="relative h-9 w-full md:w-1/3 md:shrink-0">
+          <IndexSearchInput class="!w-full" v-model="keyword" />
+          <div v-if="searching" class="absolute inset-y-0 right-3 flex items-center">
+            <loader width="20" />
+          </div>
+        </div>
 
         <div class="inline-flex items-center gap-2 ml-auto">
           <button
             class="shrink-0 h-9 px-4 focus:outline-none ring-primary-200 dark:ring-gray-600 focus:ring text-white dark:text-gray-800 inline-flex items-center font-bold shadow rounded focus:outline-none ring-primary-200 dark:ring-gray-600 focus:ring bg-primary-500 hover:bg-primary-400 active:bg-primary-600 text-white dark:text-gray-800 inline-flex items-center font-bold px-4 h-9 text-sm shrink-0 h-9 px-4 focus:outline-none ring-primary-200 dark:ring-gray-600 focus:ring text-white dark:text-gray-800 inline-flex items-center font-bold"
             @click="generatePermissions"
           >
-            <loader v-if="generatingPermissions" width="30"></loader>
+            <loader v-if="store.isGeneratingPermissions" width="30"></loader>
             <span v-else>{{ __('Generate permissions') }}</span>
           </button>
         </div>
@@ -63,11 +64,10 @@
 
         <permission-group
           v-for="(group, index) in availableGroups"
-          :key="index"
+          :key="groupKey(group)"
           :class="{ 'mb-8': index < store.groups.length - 1 }"
           :group="group"
           :roles="availableRoles"
-          :search="setSearch"
         />
       </loading-view>
     </div>
@@ -75,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import { Group } from '__types__'
 import _ from 'lodash'
 import { computed, onMounted, ref, watch } from 'vue'
 import NoResultCard from '@/components/NoResultCard.vue'
@@ -85,36 +86,52 @@ import usePermissionStore from '@/stores/permission'
 const { __ } = useTranslation()
 
 const store = usePermissionStore()
+// Initialise early (reads ?search= from the URL + syncs dark mode) so the search
+// box below can seed its value from the store on first render.
+store.init()
 
 // ACTIONS
 const generatePermissions = () => store.generatePermissions()
-const setSearch = (search: string) => {
-  debounce(() => store.setSearch(search))
-}
 const toggleRole = (role: string) => store.toggle(role)
+const groupKey = (group: Group) =>
+  [group.group, group.authorizable_type, group.authorizable_id, group.guard_name].join('|')
 
 // STATE
-const debounce = _.debounce(callback => callback(), 500)
 const error = ref<Error | null>(null)
-const generatingPermissions = ref(false)
+
+// STATE (search)
+// `keyword` mirrors the input immediately; the commit to the store (which
+// triggers the re-fetch) is debounced so we don't hit the API on every keystroke.
+const keyword = ref<string>(store.search ?? '')
+const searching = ref<boolean>(false)
+// Monotonic token: only the latest search clears the spinner, so an earlier
+// (slower) request resolving after a newer one can't hide the spinner early.
+let searchToken = 0
+const commitSearch = _.debounce((value: string) => {
+  const token = ++searchToken
+  store.setSearch(value)
+  store.data().finally(() => {
+    if (token === searchToken) {
+      searching.value = false
+    }
+  })
+}, 500)
 
 // COMPUTED
 const availableGroups = computed(() => _.sortBy(store.groups, g => g.display))
 const roles = computed(() => store.roles)
 const checked = computed(() => store.checked)
 const availableRoles = computed(() => store.roles.filter(role => store.checked[role.id]))
-const currentSearch = computed(() => store.search)
 const dark = computed(() => store.dark)
 
 // HOOKS
 onMounted(() => {
-  store.init()
-
   store.data()
 })
 
-watch(currentSearch, () => {
-  store.data()
+watch(keyword, value => {
+  searching.value = true
+  commitSearch(value)
 })
 </script>
 

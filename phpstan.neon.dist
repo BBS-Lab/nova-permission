@@ -2,12 +2,11 @@ includes:
     - phpstan-baseline.neon
 
 parameters:
-    level: 5
+    level: 8
     paths:
         - src
-        - config
-        - database
+        # The HasRoles / Authorizations traits are meant to be used on the
+        # consumer's models; analysing the workbench models that use them keeps
+        # PHPStan from reporting the traits as unused.
+        - workbench/app/Models
     tmpDir: build/phpstan
-    checkOctaneCompatibility: true
-    checkModelProperties: true
-    checkMissingIterableValueType: false

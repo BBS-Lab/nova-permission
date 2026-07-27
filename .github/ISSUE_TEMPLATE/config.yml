@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Ask a question
+    url: https://github.com/BBS-Lab/nova-permission/discussions
+    about: Ask and answer questions about this package.
+  - name: 🔒 Report a security issue
+    url: https://github.com/BBS-Lab/nova-permission/security/policy
+    about: Please report security vulnerabilities privately.

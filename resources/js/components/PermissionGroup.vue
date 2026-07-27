@@ -69,19 +69,16 @@
 
 <script setup lang="ts">
 import { Group, Permission, Role } from '__types__'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useTranslation } from '@/hooks'
 import usePermissionStore from '@/stores/permission'
 
 interface Props {
   group: Group
   roles: Role[]
-  search?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  search: '',
-})
+const props = defineProps<Props>()
 
 const { __ } = useTranslation()
 
@@ -106,8 +103,8 @@ const getPermissions = () => {
       permissions.value = result
       loading.value = false
     })
-    .catch((e: string) => {
-      error.value = e
+    .catch((e: any) => {
+      error.value = e?.response?.data?.message ?? e?.message ?? String(e)
       loading.value = false
     })
 }
@@ -176,6 +173,13 @@ const roleChecked = computed(() => {
 onMounted(() => {
   getPermissions()
 })
+
+// Re-fetch this group's permissions (filtered by the search term) when it changes.
+// The store already debounces the search commit, so no extra debounce is needed here.
+watch(
+  () => store.search,
+  () => getPermissions(),
+)
 </script>
 
 <style lang="scss" scoped>

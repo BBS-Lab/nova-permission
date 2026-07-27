@@ -7,22 +7,29 @@ namespace BBSLab\NovaPermission\Resources;
 use BBSLab\NovaPermission\Contracts\HasAbilities;
 use BBSLab\NovaPermission\Traits\Authorizable;
 use BBSLab\NovaPermission\Traits\HasFieldName;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 use Laravel\Nova\Fields\BelongsToMany;
 use Laravel\Nova\Fields\DateTime;
+use Laravel\Nova\Fields\Field;
 use Laravel\Nova\Fields\ID;
 use Laravel\Nova\Fields\MorphTo;
 use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Http\Requests\NovaRequest;
 use Laravel\Nova\Resource;
-use Spatie\Permission\PermissionRegistrar;
 
+/**
+ * @extends \Laravel\Nova\Resource<Model>
+ *
+ * @property-read string $guard_name
+ */
 class Permission extends Resource implements HasAbilities
 {
     use Authorizable,
         HasFieldName;
 
+    /** @var array<string, string> */
     public static $permissionsForAbilities = [
         'viewAny' => 'viewAny permission',
         'view' => 'view permission',
@@ -34,14 +41,8 @@ class Permission extends Resource implements HasAbilities
         'forceDelete' => 'forceDelete permission',
     ];
 
+    /** @var class-string<Model>|null */
     public static $model;
-
-//    public static function newModel()
-//    {
-//        $model =  app(PermissionRegistrar::class)->getPermissionClass();
-//
-//        return new $model;
-//    }
 
     public static $title = 'name';
 
@@ -53,7 +54,7 @@ class Permission extends Resource implements HasAbilities
     /**
      * The columns that should be searched.
      *
-     * @var array
+     * @var array<int, string>
      */
     public static $search = [
         'name',
@@ -70,9 +71,12 @@ class Permission extends Resource implements HasAbilities
         return trans('nova-permission::resources.permission.singular_label');
     }
 
+    /**
+     * @return array<int, Field>
+     */
     public function fields(NovaRequest $request): array
     {
-        $guardOptions = collect(config('auth.guards'))->mapWithKeys(function ($value, $key) {
+        $guardOptions = collect((array) config('auth.guards'))->mapWithKeys(function ($value, $key) {
             return [$key => $key];
         });
 
@@ -90,7 +94,7 @@ class Permission extends Resource implements HasAbilities
 
         $models = config('nova-permission.authorizable_models', []);
 
-        if (!empty($models)) {
+        if (! empty($models)) {
             $fields[] = MorphTo::make($this->getTranslatedFieldName('Authorizable model'), 'authorizable')
                 ->types($models)
                 ->searchable()

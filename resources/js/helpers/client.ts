@@ -15,6 +15,12 @@ export function client() {
         return Promise.reject(error)
       }
 
+      // No HTTP response (network failure, DNS, timeout, CORS): nothing to
+      // inspect — rethrow the original error instead of destructuring undefined.
+      if (!error.response) {
+        return Promise.reject(error)
+      }
+
       const response = error.response
 
       const {

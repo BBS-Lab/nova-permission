@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Workbench\Database\Seeders;
 
-use BBSLab\NovaPermission\Console\Commands\GenerateResourcePermissions;
-use BBSLab\NovaPermission\Models\Role;
+use BBSLab\NovaPermission\Actions\GenerateResourcePermissionsAction;
 use BBSLab\NovaPermission\Models\Permission;
+use BBSLab\NovaPermission\Models\Role;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Artisan;
 use Workbench\App\Models\Post;
+use Workbench\App\Models\Service;
 use Workbench\App\Models\User;
 
 class DatabaseSeeder extends Seeder
@@ -21,28 +21,28 @@ class DatabaseSeeder extends Seeder
     {
         $password = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'; // password
 
-        /** @var \Workbench\App\Models\User $admin */
+        /** @var User $admin */
         $admin = User::query()->create([
             'name' => 'Admin',
             'email' => 'admin@laravel.com',
             'password' => $password,
         ]);
 
-        /** @var \Workbench\App\Models\User $writer */
+        /** @var User $writer */
         $writer = User::query()->create([
             'name' => 'Writer',
             'email' => 'writer@laravel.com',
             'password' => $password,
         ]);
 
-        /** @var \Workbench\App\Models\User $reader */
+        /** @var User $reader */
         $reader = User::query()->create([
             'name' => 'Reader',
             'email' => 'reader@laravel.com',
             'password' => $password,
         ]);
 
-        Artisan::call(GenerateResourcePermissions::class);
+        app(GenerateResourcePermissionsAction::class)->execute();
 
         $post = Post::query()->create([
             'title' => 'First post',
@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
             'authorizable_id' => $post->getKey(),
         ]);
 
-        /** @var \BBSLab\NovaPermission\Models\Role $adminRole */
+        /** @var Role $adminRole */
         $adminRole = Role::query()->create([
             'name' => 'admin',
             'guard_name' => 'web',
@@ -72,7 +72,7 @@ class DatabaseSeeder extends Seeder
             array_values(\BBSLab\NovaPermission\Resources\Permission::$permissionsForAbilities),
         ));
 
-        /** @var \BBSLab\NovaPermission\Models\Role $writerRole */
+        /** @var Role $writerRole */
         $writerRole = Role::query()->create([
             'name' => 'writer',
             'guard_name' => 'web',
@@ -91,7 +91,7 @@ class DatabaseSeeder extends Seeder
             $customPermission,
         ]);
 
-        /** @var \BBSLab\NovaPermission\Models\Role $readerRole */
+        /** @var Role $readerRole */
         $readerRole = Role::query()->create([
             'name' => 'reader',
             'guard_name' => 'web',
@@ -103,5 +103,33 @@ class DatabaseSeeder extends Seeder
             'viewAny post',
             'view post',
         ]);
+
+        // --- Granular ("per-instance") permissions demo on Service -----------
+        //
+        // Instance-override rule: a service WITH a scoped permission is governed
+        // by it alone; a service WITHOUT one falls back to the general grant.
+
+        $alpha = Service::query()->create(['name' => 'Alpha']);
+        Service::query()->create(['name' => 'Beta']);
+        Service::query()->create(['name' => 'Gamma']);
+
+        // A "view service" permission scoped to the Alpha service only.
+        $viewAlpha = Permission::query()->create([
+            'name' => 'view service',
+            'guard_name' => 'web',
+            'authorizable_type' => $alpha->getMorphClass(),
+            'authorizable_id' => $alpha->getKey(),
+        ]);
+
+        // The reader holds the GENERAL "view service": it sees every service that
+        // has no scoped permission — Beta and Gamma, but NOT Alpha.
+        $generalViewService = Permission::query()
+            ->where('name', '=', 'view service')
+            ->whereNull('authorizable_id')
+            ->firstOrFail();
+        $readerRole->givePermissionTo($generalViewService, 'viewAny service');
+
+        // The writer holds only Alpha's scoped permission: it sees Alpha alone.
+        $writerRole->givePermissionTo($viewAlpha, 'viewAny service');
     }
 }

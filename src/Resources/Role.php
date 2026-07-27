@@ -7,22 +7,30 @@ namespace BBSLab\NovaPermission\Resources;
 use BBSLab\NovaPermission\Contracts\HasAbilities;
 use BBSLab\NovaPermission\Traits\Authorizable;
 use BBSLab\NovaPermission\Traits\HasFieldName;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Laravel\Nova\Fields\BelongsToMany;
 use Laravel\Nova\Fields\Boolean;
 use Laravel\Nova\Fields\DateTime;
+use Laravel\Nova\Fields\Field;
 use Laravel\Nova\Fields\ID;
 use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Http\Requests\NovaRequest;
 use Laravel\Nova\Resource;
-use Spatie\Permission\PermissionRegistrar;
 
+/**
+ * @extends \Laravel\Nova\Resource<Model>
+ *
+ * @property-read string $guard_name
+ */
 class Role extends Resource implements HasAbilities
 {
     use Authorizable,
         HasFieldName;
 
+    /** @var array<string, string> */
     public static $permissionsForAbilities = [
         'viewAny' => 'viewAny role',
         'view' => 'view role',
@@ -34,18 +42,16 @@ class Role extends Resource implements HasAbilities
         'forceDelete' => 'forceDelete role',
     ];
 
+    /** @var (\Closure(Request): bool)|null */
     public static $canSeeOverridePermissionCallback = null;
 
+    /** @var class-string<Model>|null */
     public static $model;
 
-//    public static function newModel()
-//    {
-//        $model =  app(PermissionRegistrar::class)->getRoleClass();
-//
-//        return new $model;
-//    }
-
-    public static function canSeeOverridePermmission($callback)
+    /**
+     * @param  (\Closure(Request): bool)|null  $callback
+     */
+    public static function canSeeOverridePermmission(?\Closure $callback): void
     {
         static::$canSeeOverridePermissionCallback = $callback;
     }
@@ -57,6 +63,7 @@ class Role extends Resource implements HasAbilities
         return "Guard: {$this->guard_name}";
     }
 
+    /** @var array<int, string> */
     public static $search = [
         'name', 'guard_name',
     ];
@@ -71,9 +78,12 @@ class Role extends Resource implements HasAbilities
         return trans('nova-permission::resources.role.singular_label');
     }
 
+    /**
+     * @return array<int, Field>
+     */
     public function fields(NovaRequest $request): array
     {
-        $guardOptions = collect(config('auth.guards'))->mapWithKeys(function ($value, $key) {
+        $guardOptions = collect((array) config('auth.guards'))->mapWithKeys(function ($value, $key) {
             return [$key => $key];
         });
 

@@ -5,17 +5,19 @@ declare(strict_types=1);
 namespace BBSLab\NovaPermission\Actions;
 
 use BBSLab\NovaPermission\Contracts\HasAbilities;
+use BBSLab\NovaPermission\Contracts\Permission;
+use Illuminate\Database\Eloquent\Model;
 use Laravel\Nova\Nova;
-use phpDocumentor\Reflection\Types\ClassString;
+use Laravel\Nova\Resource;
 use Spatie\Permission\PermissionRegistrar;
 
 class GenerateResourcePermissionsAction
 {
-    public function execute()
+    public function execute(): void
     {
         $guard = config('nova.guard') ?? config('auth.defaults.guard');
 
-        /** @var \BBSLab\NovaPermission\Contracts\Permission $permissionModel */
+        /** @var Permission $permissionModel */
         $permissionModel = app(PermissionRegistrar::class)->getPermissionClass();
 
         collect(Nova::$resources)->filter(function ($resource) {
@@ -24,11 +26,18 @@ class GenerateResourcePermissionsAction
             $group = class_basename($resource);
 
             foreach ($resource::$permissionsForAbilities as $ability => $permission) {
-                $permissionModel::query()->firstOrCreate([
-                    'name' => $permission,
-                    'group' => $group,
-                    'guard_name' => $guard,
-                ]);
+                // Match on the unique key (name + guard + unscoped morph); `group`
+                // is a value so regenerating after a resource rename updates the
+                // group instead of colliding with the existing row.
+                $permissionModel::query()->updateOrCreate(
+                    [
+                        'name' => $permission,
+                        'guard_name' => $guard,
+                        'authorizable_id' => null,
+                        'authorizable_type' => null,
+                    ],
+                    ['group' => $group],
+                );
             }
         });
 
@@ -37,12 +46,11 @@ class GenerateResourcePermissionsAction
 
     protected function resourceIsNotExcluded(string $resource): bool
     {
-        return !in_array($resource, config('nova-permission.generate_without_resources', []));
+        return ! in_array($resource, config('nova-permission.generate_without_resources', []));
     }
 
     /**
-     * @param class-string<\Laravel\Nova\Resource> $resource
-     * @return bool
+     * @param  class-string<\Laravel\Nova\Resource<Model>>  $resource
      */
     protected function resourceHasAbilities(string $resource): bool
     {

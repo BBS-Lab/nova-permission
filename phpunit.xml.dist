@@ -20,6 +20,12 @@
             <directory>tests</directory>
         </testsuite>
     </testsuites>
+    <php>
+        <!-- Isolate the suite in an in-memory database so running tests never
+             wipes the file-based DB used by `composer serve`. -->
+        <env name="DB_CONNECTION" value="sqlite"/>
+        <env name="DB_DATABASE" value=":memory:"/>
+    </php>
     <coverage>
         <report>
             <html outputDirectory="build/coverage"/>

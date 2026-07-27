@@ -6,9 +6,12 @@ namespace Workbench\App\Providers;
 
 use BBSLab\NovaPermission\PermissionBuilder;
 use Illuminate\Support\Facades\Gate;
-use Laravel\Nova\DevTool\DevTool;
+use Laravel\Nova\Dashboards\Main;
+use Laravel\Nova\Nova;
 use Laravel\Nova\NovaApplicationServiceProvider;
-use Orchestra\Workbench\Workbench;
+use Workbench\App\Nova\Post;
+use Workbench\App\Nova\Service;
+use Workbench\App\Nova\User;
 
 class NovaServiceProvider extends NovaApplicationServiceProvider
 {
@@ -26,10 +29,18 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
      */
     protected function routes(): void
     {
-        DevTool::routes()
-            ->withAuthenticationRoutes()
-            ->withPasswordResetRoutes()
-            ->register();
+        // Nova::routes() registers the full Nova UI (dashboard, resources, login)
+        // — DevTool::routes() only wires the devtool/auth routes, which left
+        // /nova returning 404. Kept to the API shared by Nova 4 and 5.
+        $registration = Nova::routes()
+            ->withAuthenticationRoutes(default: true)
+            ->withPasswordResetRoutes();
+
+        if (method_exists($registration, 'withoutEmailVerificationRoutes')) {
+            $registration->withoutEmailVerificationRoutes();
+        }
+
+        $registration->register();
     }
 
     /**
@@ -50,7 +61,7 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
     protected function dashboards(): array
     {
         return [
-            new \Laravel\Nova\Dashboards\Main,
+            new Main,
         ];
     }
 
@@ -68,19 +79,17 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
 
     /**
      * Register the application's Nova resources.
+     *
+     * Registered explicitly (rather than via laravel/nova-devtool's
+     * DevTool::resourcesIn) so the package has no Nova-5-only dev dependency and
+     * the workbench resolves on both Nova 4 and Nova 5.
      */
     protected function resources(): void
     {
-        DevTool::resourcesIn(Workbench::path('app/Nova'));
-    }
-
-    /**
-     * Register any application services.
-     *
-     * @return void
-     */
-    public function register()
-    {
-        //
+        Nova::resources([
+            Post::class,
+            Service::class,
+            User::class,
+        ]);
     }
 }

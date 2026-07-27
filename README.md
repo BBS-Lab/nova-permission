@@ -2,26 +2,41 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/bbs-lab/nova-permission.svg?style=flat-square)](https://packagist.org/packages/bbs-lab/nova-permission)
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![StyleCI](https://styleci.io/repos/220784911/shield)](https://styleci.io/repos/220784911)
-[![Quality Score](https://img.shields.io/scrutinizer/g/bbs-lab/nova-permission.svg?style=flat-square)](https://scrutinizer-ci.com/g/bbs-lab/nova-permission)
+[![Tests](https://img.shields.io/github/actions/workflow/status/BBS-Lab/nova-permission/run-tests.yml?branch=master&label=tests&style=flat-square)](https://github.com/BBS-Lab/nova-permission/actions/workflows/run-tests.yml)
+[![PHPStan](https://img.shields.io/github/actions/workflow/status/BBS-Lab/nova-permission/phpstan.yml?branch=master&label=phpstan&style=flat-square)](https://github.com/BBS-Lab/nova-permission/actions/workflows/phpstan.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/bbs-lab/nova-permission.svg?style=flat-square)](https://packagist.org/packages/bbs-lab/nova-permission)
 
 Based on [spatie/permission](https://github.com/spatie/laravel-permission), this tool gives you ability to manage roles and permission. The tool provides permission builder.
 
-![permission tool screenshot](docs/nova-permission-tool.png)
+![permission builder](art/permission-builder.png)
 
 ## Contents
 
+- [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
     - [Generate permissions](#generate-permissions)
     - [Protect resources](#protect-resources)
+    - [Granular permissions](#granular-permissions)
+    - [Caching](#caching)
     - [Super admin](#super-admin)
+- [Testing](#testing)
 - [Changelog](#changelog)
 - [Security](#security)
 - [Contributing](#contributing)
 - [Credits](#credits)
 - [License](#license)
+
+## Requirements
+
+- PHP `^8.2`
+- Laravel Nova `^4.0 || ^5.0`
+- spatie/laravel-permission `^6.0`
+- Laravel `^11.0 || ^12.0 || ^13.0`
+
+Both Nova majors are exercised in CI. Note that **Nova 4** (through its `inertiajs/inertia-laravel`
+dependency) tops out at **PHP 8.4** and **Laravel 11**; on PHP 8.5 or Laravel 12+, use Nova 5. Composer
+resolves the right combination for you.
 
 ## Installation
 
@@ -41,24 +56,24 @@ The service provider will automatically get registered. Or you may manually add 
 ],
 ```
 
-You should publish the migrations with:
+Publish Spatie's permission migration (the base `permissions`/`roles` tables):
 
 ```bash
-php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider" --tag="migrations"
-
-php artisan vendor:publish --provider="BBSLab\NovaPermission\NovaPermissionServiceProvider" --tag="migrations"
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider" --tag="permission-migrations"
 ```
+
+This package's own migrations (which add the `group` + polymorphic `authorizable` columns and the `override_permission` flag) run automatically with `php artisan migrate` — you do not need to publish them.
 
 You can publish the config files with:
 
 ```bash
-php artisan vendor:publish --provider="BBSLab\NovaPermission\NovaPermissionServiceProvider" --tag="config"
+php artisan vendor:publish --tag="nova-permission-config"
 ```
 
-This will publish `config/permission.php` and `config/nova-permission.php` files with the following contents:
+This publishes two files. `config/permission.php` is [Spatie's standard configuration](https://spatie.be/docs/laravel-permission) — the only change this package needs is to point the two model bindings at its own models (which implement the package contracts):
 
 ```php
-// config/permission.php
+// config/permission.php (only the keys this package changes; the rest is Spatie's default)
 return [
 
     'models' => [
@@ -87,123 +102,37 @@ return [
 
     ],
 
-    'table_names' => [
-
-        /*
-         * When using the "HasRoles" trait from this package, we need to know which
-         * table should be used to retrieve your roles. We have chosen a basic
-         * default value but you may easily change it to any table you like.
-         */
-
-        'roles' => 'roles',
-
-        /*
-         * When using the "HasPermissions" trait from this package, we need to know which
-         * table should be used to retrieve your permissions. We have chosen a basic
-         * default value but you may easily change it to any table you like.
-         */
-
-        'permissions' => 'permissions',
-
-        /*
-         * When using the "HasPermissions" trait from this package, we need to know which
-         * table should be used to retrieve your models permissions. We have chosen a
-         * basic default value but you may easily change it to any table you like.
-         */
-
-        'model_has_permissions' => 'model_has_permissions',
-
-        /*
-         * When using the "HasRoles" trait from this package, we need to know which
-         * table should be used to retrieve your models roles. We have chosen a
-         * basic default value but you may easily change it to any table you like.
-         */
-
-        'model_has_roles' => 'model_has_roles',
-
-        /*
-         * When using the "HasRoles" trait from this package, we need to know which
-         * table should be used to retrieve your roles permissions. We have chosen a
-         * basic default value but you may easily change it to any table you like.
-         */
-
-        'role_has_permissions' => 'role_has_permissions',
-    ],
-
-    'column_names' => [
-
-        /*
-         * Change this if you want to name the related model primary key other than
-         * `model_id`.
-         *
-         * For example, this would be nice if your primary keys are all UUIDs. In
-         * that case, name this `model_uuid`.
-         */
-
-        'model_morph_key' => 'model_id',
-    ],
-
-    /*
-     * When set to true, the required permission/role names are added to the exception
-     * message. This could be considered an information leak in some contexts, so
-     * the default setting is false here for optimum safety.
-     */
-
-    'display_permission_in_exception' => false,
-
-    'cache' => [
-
-        /*
-         * By default all permissions are cached for 24 hours to speed up performance.
-         * When permissions or roles are updated the cache is flushed automatically.
-         */
-
-        'expiration_time' => \DateInterval::createFromDateString('24 hours'),
-
-        /*
-         * The cache key used to store all permissions.
-         */
-
-        'key' => 'spatie.permission.cache',
-
-        /*
-         * When checking for a permission against a model by passing a Permission
-         * instance to the check, this key determines what attribute on the
-         * Permissions model is used to cache against.
-         *
-         * Ideally, this should match your preferred way of checking permissions, eg:
-         * `$user->can('view-posts')` would be 'name'.
-         */
-
-        'model_key' => 'name',
-
-        /*
-         * You may optionally indicate a specific cache driver to use for permission and
-         * role caching using any of the `store` drivers listed in the cache.php config
-         * file. Using 'default' here means to use the `default` set in cache.php.
-         */
-
-        'store' => 'default',
-    ],
+    // `table_names`, `column_names`, `display_permission_in_exception` and `cache`
+    // keep Spatie's defaults — leave them as published unless you have a reason to change them.
 ];
 ```
 
 ```php
-// config/nova-permission
+// config/nova-permission.php
 return [
+    // Resources whose individual records can carry their own permissions
+    // (see "Granular permissions" below). Leave empty if you only use
+    // general, model-wide permissions.
     'authorizable_models' => [
-        // \App\Models\Post::class,
+        // \App\Nova\Post::class,
     ],
 
+    // Resources excluded from `nova-permission:generate`.
     'generate_without_resources' => [
         \Laravel\Nova\Actions\ActionResource::class,
-        \BBSLab\NovaPermission\Resources\Role::class,
-        \BBSLab\NovaPermission\Resources\Permission::class,
-    ]
+    ],
+
+    // Authorization gate cache. Disabled by default — enable it only when the
+    // read volume justifies it and you accept the staleness window (entries are
+    // invalidated on permission save/delete). `ttl` is the lifetime in seconds.
+    'cache' => [
+        'enabled' => env('NOVA_PERMISSION_CACHE', false),
+        'ttl' => env('NOVA_PERMISSION_CACHE_TTL', 60 * 60),
+    ],
 ];
 ```
 
-After the migration has been published you can create the role and permission tables by running the migrations :
+Then create the tables by running the migrations (Spatie's published migration plus this package's auto-registered ones):
 
 ```bash
 php artisan migrate
@@ -238,6 +167,26 @@ class NovaServiceProvider extends NovaApplicationServiceProvider
 }
 ```
 
+### Prepare your User model
+
+On your authenticatable model, use **this package's** `HasRoles` trait (not Spatie's) and implement the `CanOverridePermission` contract. The package trait adds the per-instance `hasPermissionToOnModel()` method the policies rely on, and the contract powers the super-admin (`override_permission`) feature:
+
+```php
+namespace App\Models;
+
+use BBSLab\NovaPermission\Contracts\CanOverridePermission;
+use BBSLab\NovaPermission\Traits\HasRoles;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+class User extends Authenticatable implements CanOverridePermission
+{
+    use HasRoles;
+}
+```
+
+> [!IMPORTANT]
+> Use `BBSLab\NovaPermission\Traits\HasRoles`, **not** `Spatie\Permission\Traits\HasRoles`. The Nova policies call `hasPermissionToOnModel()`, which exists only on the package trait — with Spatie's trait every protected resource throws `Call to undefined method`.
+
 ### Generate permissions
 
 The tool allow to generate resource permissions. Your resources must implement `BBSLab\NovaPermission\Contracts\HasAbilities` and define the public static `$permissionsForAbilities` variable :
@@ -247,7 +196,7 @@ The tool allow to generate resource permissions. Your resources must implement `
 namespace App\Nova;
 
 use BBSLab\NovaPermission\Contracts\HasAbilities;
-use BBSLab\NovaPermission\Concerns\Authorizable;
+use BBSLab\NovaPermission\Traits\Authorizable;
 
 class Post extends Resource implements HasAbilities
 {
@@ -312,66 +261,96 @@ The base `Policy` class takes care of the following actions for you :
 
 You are free to add or update methods.
 
-Sometimes you may want to protect a particular resource. First the model must implement the `BBSLab\NovaPermission\Contracts\HasAuthorizations` interface and use the `BBSLab\NovaPermission\Traits\Authorizations` trait :
+### Granular permissions
+
+Permissions come in two flavours:
+
+- **General** — a model-wide permission (the row's `authorizable` is `null`). "Can this user view *posts*?"
+- **Granular** — a permission scoped to one specific record via a polymorphic `authorizable` relation. "Can this user view *this* post?"
+
+The two are resolved with an **instance-override** rule:
+
+> An instance that carries a granular permission is governed by that permission **alone**. An instance with no granular permission falls back to the general permission.
+
+So granting `view service` generally lets a user view every service, until a granular `view service` is attached to a particular service — from then on that one service is gated by the granular grant only, while the rest keep following the general one.
+
+To make a model's individual records authorizable, implement `BBSLab\NovaPermission\Contracts\HasAuthorizations` and use the `BBSLab\NovaPermission\Traits\Authorizations` trait:
 
 ```php
 namespace App\Models;
 
 use BBSLab\NovaPermission\Contracts\HasAuthorizations;
 use BBSLab\NovaPermission\Traits\Authorizations;
+use Illuminate\Database\Eloquent\Model;
 
-class Post extends Model implements HasAuthorizations 
+class Service extends Model implements HasAuthorizations
 {
     use Authorizations;
 }
 ```
 
-You need to add the resource in the `config/nova-permission.php`:
+Register the Nova resource in `config/nova-permission.php` so the builder lets you attach permissions to individual records:
 
 ```php
 'authorizable_models' => [
-    \App\Nova\Post::class,
+    \App\Nova\Service::class,
 ],
 ```
 
-You can now create a permission for a specific post:
+You can now create a permission scoped to a specific service:
 
-![permission on authorizable](docs/permission-on-authorizable.png)
+![permission on authorizable](art/permission-on-authorizable.png)
 
 > [!TIP]
-> If you want to have custom permissions for each model you create you can create an [observer](https://laravel.com/docs/11.x/eloquent#observers) to create the permission automatically.
+> To create the granular permission automatically whenever a record is created, use an [observer](https://laravel.com/docs/eloquent#observers).
 
-And update the post policy:
+Because the base `Policy` already routes per-instance abilities (`view`, `update`, `delete`, …) through `hasPermissionToOnModel()`, a policy that maps the ability name to the permission needs **no extra code** — the instance-override rule is applied for you. You only override a policy method when the granular permission has a *different* name than the ability:
 
- ```php
+```php
 namespace App\Policies;
 
-use App\Models\Post;use BBSLab\NovaPermission\Policies\Policy;use Illuminate\Contracts\Auth\Access\Authorizable;
+use App\Models\Service;
+use BBSLab\NovaPermission\Policies\Policy;
+use Illuminate\Contracts\Auth\Access\Authorizable;
+use Illuminate\Database\Eloquent\Model;
 
-class PostPolicy extends Policy
+class ServicePolicy extends Policy
 {
     protected function model(): string
     {
-        return Post::class;
+        return Service::class;
     }
-    
-    public function view(Authorizable $user, Post $post)
+
+    // The parameter type must stay `Model` to match the base Policy signature
+    // (PHP forbids narrowing it to Service); the instance is your Service.
+    public function view(Authorizable $user, Model $service): ?bool
     {
-        if ($user->hasPermissionToOnModel('view secret post', $post)) {
+        if ($user->hasPermissionToOnModel('view secret service', $service)) {
             return true;
         }
+
+        return null;
     }
 }
 ```
 
-> [!TIP]
-> If you create a custom permission for a model which is named like a [Nova action](https://nova.laravel.com/docs/resources/authorization.html#policies) (e.g. `view`) you don't need to update your policy.
+#### Filtering an index by permission
+
+To list only the records a user may act on, apply the `authorize` query scope (provided by the `Authorizations` trait). It mirrors the instance-override rule and honours `override_permission` roles:
+
+```php
+Service::query()->authorize($request->user(), 'view service')->get();
+```
+
+### Caching
+
+Gate checks are **not** cached by default. Enable the cache from `config/nova-permission.php` (or the `NOVA_PERMISSION_CACHE` env flag) once read volume justifies it. Cached entries are invalidated when a permission is saved or deleted; see the config comments for the staleness caveats.
 
 ### Super admin
 
 You may want to create a role as super admin. You can do that using the `override_permission` attribute.
 
-![super admin](docs/super-admin-role.png)
+![super admin](art/super-admin-role.png)
 
 You may prevent `override_permission` attribute modification by using the `BBSLab\NovaPermission\Resources\Role::canSeeOverridePermmission` method:
 
@@ -383,9 +362,30 @@ BBSLab\NovaPermission\Resources\Role::canSeeOverridePermmission(function (Reques
 });
 ``` 
 
+## Testing
+
+The package ships a runnable Nova workbench that doubles as a manual playground and a demo of every feature:
+
+```bash
+composer serve   # boots Nova at http://127.0.0.1:8000/nova
+```
+
+Log in with `admin@laravel.com` / `password` (also seeded: `writer@laravel.com`, `reader@laravel.com`, same password). The workbench seeds roles, a `Post` and `Service` resource showcasing general vs granular permissions, and Nova impersonation so you can switch between the seeded users without logging out.
+
+The quality gate:
+
+```bash
+composer test           # Pest
+composer test-coverage  # Pest with 100% line coverage on src/
+composer analyse        # PHPStan level 8
+composer format         # Pint
+```
+
+Front-end work additionally uses `npm run package` (Prettier + ESLint + Vite build).
+
 ## Changelog
 
-Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
+Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently, and [UPGRADE](UPGRADE.md) for the 1.x → 2.0 migration.
 
 ## Security
 
@@ -397,7 +397,7 @@ Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Credits
 
-- [Mikaël Popowicz](https://github.com/mikaelpopowicz)
+- [Big Boss Studio](https://github.com/BBS-Lab)
 - [All Contributors](../../contributors)
 
 ## License

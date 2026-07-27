@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use BBSLab\NovaPermission\Models\Permission;
+use BBSLab\NovaPermission\Models\Role;
 
 return [
 
@@ -15,7 +17,7 @@ return [
          * `BBSLab\NovaPermission\Contracts\Permission` contract.
          */
 
-        'permission' => BBSLab\NovaPermission\Models\Permission::class,
+        'permission' => Permission::class,
 
         /*
          * When using the "HasRoles" trait from this package, we need to know which
@@ -26,7 +28,7 @@ return [
          * `BBSLab\NovaPermission\Contracts\Role` contract.
          */
 
-        'role' => BBSLab\NovaPermission\Models\Role::class,
+        'role' => Role::class,
 
     ],
 
@@ -77,8 +79,8 @@ return [
         /*
          * Change this if you want to name the related pivots other than defaults
          */
-        'role_pivot_key' => null, //default 'role_id',
-        'permission_pivot_key' => null, //default 'permission_id',
+        'role_pivot_key' => null, // default 'role_id',
+        'permission_pivot_key' => null, // default 'permission_id',
 
         /*
          * Change this if you want to name the related model primary key other than
@@ -169,7 +171,7 @@ return [
          * When permissions or roles are updated the cache is flushed automatically.
          */
 
-        'expiration_time' => \DateInterval::createFromDateString('24 hours'),
+        'expiration_time' => DateInterval::createFromDateString('24 hours'),
 
         /*
          * The cache key used to store all permissions.

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace BBSLab\NovaPermission\Traits;
 
 use BBSLab\NovaPermission\Contracts\HasAuthorizations;
+use BBSLab\NovaPermission\Support\PermissionCache;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Spatie\Permission\Contracts\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Traits\HasRoles as BaseTrait;
 
@@ -13,10 +16,12 @@ trait HasRoles
 {
     use BaseTrait;
 
-    public function getOverridePermissionCacheTags(): array
-    {
-        return ['nova-permission', 'can-override'];
-    }
+    /**
+     * Per-request memo for canOverridePermission(). The global Gate::after hook
+     * calls it on every gate check (many per Nova page), so we cache the result
+     * on the instance to avoid one roles-exists query per check.
+     */
+    protected ?bool $novaCanOverridePermission = null;
 
     public function getOverridePermissionCacheKey(): string
     {
@@ -29,24 +34,18 @@ trait HasRoles
 
     public function forgetOverridePermission(): void
     {
-        /** @var \Illuminate\Contracts\Cache\Factory $cacheManager */
-        $cacheManager = app('cache');
+        $this->novaCanOverridePermission = null;
 
-        $cacheManager->flush($this->getOverridePermissionCacheKey());
+        PermissionCache::forget($this->getOverridePermissionCacheKey());
     }
 
     public function canOverridePermission(): bool
     {
-        /** @var \Illuminate\Contracts\Cache\Factory $cacheManager */
-        $cacheManager = app('cache');
+        if ($this->novaCanOverridePermission !== null) {
+            return $this->novaCanOverridePermission;
+        }
 
-        $cache = method_exists($cacheManager->store(), 'tags')
-            ? $cacheManager->store()->tags($this->getOverridePermissionCacheTags())
-            : $cacheManager->store();
-
-        $key = $this->getOverridePermissionCacheKey();
-
-        return $cache->remember($key, app(PermissionRegistrar::class)->cacheExpirationTime, function () {
+        return $this->novaCanOverridePermission = PermissionCache::remember($this->getOverridePermissionCacheKey(), function () {
             $guard = config('nova.guard') ?? config('auth.defaults.guard');
 
             return $this->roles()
@@ -56,35 +55,56 @@ trait HasRoles
         });
     }
 
-    public function hasPermissionToOnModel($permission, $model = null, $guardName = null): bool
+    public function hasPermissionToOnModel(string $permission, ?Model $model = null, ?string $guardName = null): bool
     {
-        if (empty($model) || !$model instanceof HasAuthorizations) {
-            return $this->can($permission);
+        $guardName = $guardName ?? $this->getDefaultGuardName();
+
+        if (empty($model) || ! $model instanceof HasAuthorizations) {
+            return $this->hasGeneralPermissionTo($permission, $guardName);
         }
 
+        // Keep this key in sync with Permission::forgetPermissionFromCache(),
+        // which invalidates it using the authorizable_type morph class.
         $key = implode(':', [
             'nova-permission',
             'authorization',
-            class_basename($model),
+            $model->getMorphClass(),
             $model->getKey(),
             Str::snake($permission),
         ]);
 
-        $registrar = app(PermissionRegistrar::class);
+        /** @var Permission|null $authorization */
+        $authorization = PermissionCache::remember($key, function () use ($permission, $model, $guardName) {
+            return $model->authorizations()
+                ->where('name', '=', $permission)
+                ->where('guard_name', '=', $guardName)
+                ->first();
+        });
 
-        /** @var \Illuminate\Contracts\Cache\Factory $cacheManager */
-        $cacheManager = app('cache');
-
-        $authorization = $cacheManager->store()
-            ->remember($key, $registrar->cacheExpirationTime, function () use ($permission, $model, $guardName) {
-                return $model->authorizations()
-                    ->where('name', '=', $permission)
-                    ->where('guard_name', '=', $guardName ?? $this->getDefaultGuardName())
-                    ->first();
-            });
-
-        return !empty($authorization)
+        // An instance carrying a scoped permission is governed by it alone;
+        // otherwise fall back to the general (unscoped) permission.
+        return ! empty($authorization)
             ? $this->hasPermissionTo($authorization)
-            : $this->can($permission);
+            : $this->hasGeneralPermissionTo($permission, $guardName);
+    }
+
+    /**
+     * Whether the user holds the general (unscoped) permission of this name.
+     *
+     * Resolved explicitly on the authorizable-less row so it is never confused
+     * with an instance-scoped permission that shares the same name.
+     */
+    protected function hasGeneralPermissionTo(string $permission, string $guardName): bool
+    {
+        $permissionClass = app(PermissionRegistrar::class)->getPermissionClass();
+
+        $general = $permissionClass::query()
+            ->where('name', '=', $permission)
+            ->where('guard_name', '=', $guardName)
+            ->whereNull('authorizable_id')
+            ->whereNull('authorizable_type')
+            ->first();
+
+        return $general !== null && $this->hasPermissionTo($general);
     }
 }

@@ -10,6 +10,9 @@ namespace BBSLab\NovaPermission\Http\Requests;
  */
 class PermissionByAuthorizableRequest extends PermissionRequest
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return array_merge(parent::rules(), [
@@ -18,7 +21,7 @@ class PermissionByAuthorizableRequest extends PermissionRequest
                 'required',
                 'string',
                 function ($attribute, $value, $fail) {
-                    if (!class_exists($value)) {
+                    if (! class_exists($value)) {
                         $fail($attribute.'is invalid');
                     }
                 },
